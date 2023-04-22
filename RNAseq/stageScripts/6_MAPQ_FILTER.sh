@@ -1,0 +1,1 @@
+../../stageScripts/6_MAPQ_FILTER.sh

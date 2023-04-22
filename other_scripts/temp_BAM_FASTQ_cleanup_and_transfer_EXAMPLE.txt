@@ -1,0 +1,43 @@
+echo "Original disk usage:" > temp_BAM_files_deleted.txt
+du -hs $PWD >> temp_BAM_files_deleted.txt
+echo "##########" >> temp_BAM_files_deleted.txt
+echo "Deletion of temporary BAM files:" >> temp_BAM_files_deleted.txt
+
+# Delete temp bam files
+for BAM in $(find $PWD/Sample_*/Alignments/ -name *mapped.no-rgid.bam); do echo $BAM >> temp_BAM_files_deleted.txt; rm $BAM; done
+
+for BAM in $(find $PWD/Sample_*/Alignments/ -name *mapped.rgid.bam); do echo $BAM >> temp_BAM_files_deleted.txt; rm $BAM; done
+
+for BAM in $(find $PWD/Sample_*/Alignments/ -name *mapped.rgid.filtered.bam); do echo $BAM >> temp_BAM_files_deleted.txt; rm $BAM; done
+
+for BAM in $(find $PWD/Sample_*/Alignments/ -name *mapped.rgid.filtered.sorted.bam); do echo $BAM >> temp_BAM_files_deleted.txt; rm $BAM; done
+
+echo "##########" >> temp_BAM_files_deleted.txt
+echo "Final disk usage:" >> temp_BAM_files_deleted.txt
+du -hs $PWD >> temp_BAM_files_deleted.txt
+
+###################################################
+
+echo "Original disk usage:" > temp_FASTQ_files_deleted.txt
+du -hs $PWD >> temp_FASTQ_files_deleted.txt
+echo "##########" >> temp_FASTQ_files_deleted.txt
+echo "Deletion of temporary FASTQ files:" >> temp_FASTQ_files_deleted.txt
+
+# Delete temp fastq files
+
+for FASTQ in $(find $PWD/Sample_*/Processed/fastq-mcf_Discarded/trimmed_*fastq.skip.gz); do echo $FASTQ >> temp_FASTQ_files_deleted.txt; rm $FASTQ; done
+
+for FASTQ in $(find $PWD/Sample_*/Processed/trimmed_*fastq.gz); do echo $FASTQ >> temp_FASTQ_files_deleted.txt; rm $FASTQ; done
+
+echo "##########" >> temp_FASTQ_files_deleted.txt
+echo "Final disk usage:" >> temp_FASTQ_files_deleted.txt
+du -hs $PWD >> temp_FASTQ_files_deleted.txt
+
+###################################################
+
+# gather counts files
+mkdir all_counts
+for i in $(find Sample_*/Counts/HTSeq/ -name *counts.txt); do cp $i all_counts/; done
+
+# sync with google cloud storage (dry run -n first) + need -e to exclude symlinks (especially because it will copy the file + broken symlink cause abort)
+gsutil rsync -urne analysis_08_08_2022 gs://hdchpcprodgalbraith1-staging/5xFAD_Dp16/analysis_08_08_2022

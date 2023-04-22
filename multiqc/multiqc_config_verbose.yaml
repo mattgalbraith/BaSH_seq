@@ -1,0 +1,80 @@
+make_data_dir: false
+
+exclude_modules:
+    - samtools
+    - bowtie2
+
+custom_logo: '/Users/kohl/Projects/pipeline_scripts/multiqc/cu_anschutz_logo.png'
+
+title: 'RNA-seq data'
+subtitle: 'Verbose QC report'
+intro_text: 'Jones_Dp16_BDNFoe'
+
+report_header_info:
+    - Contact E-mail: 'kohl.kinning@cuanschutz.edu'
+    - Application Type: 'RNA-seq'
+#    - Sequencing Platform: 'Hiseq 4000 system'
+#    - Sequencing Setup: '2x150'
+
+custom_plot_config:
+    htseq_assignment_plot
+
+#show the FastQC module twice for trimmed and untrimmed
+module_order:
+    - general_stats:
+        path_filters:
+        - 'FASTQC*'
+    - fastqc:
+        name: 'FastQC (trimmed)'
+        info: 'This section of the report shows FastQC results after adapter trimming.'
+        target: ''
+        path_filters_exclude:
+            - '*FASTQC_pre_filtered*'
+
+report_section_order:
+    general_stats:
+        order: 120
+    fastqc:
+        order: 110
+    fastqc_status_checks:
+        order: -1000
+    fastq_screen:
+        order: 100
+    custom_read_summary_table:
+        order: 90
+    custom_read_summary_graph:
+        order: 80
+    htseq:
+        order: 70
+    rseqc:
+        order: 60
+    bowtie2:
+        order: 50
+    tophat:
+        order: 40
+    picard:
+        order: 30
+    Samtools:
+        order: 20
+
+#custom_read_counts_graph:
+
+sample_names_ignore:
+    - 'bowtie.*.*'
+
+fn_clean_trim:
+    - 'trimmed_'
+
+extra_fn_clean_exts:
+    - 'fastq.gz'
+    - 'trimmed_'
+    - '.mapped'
+    - '_HTSeq'
+    - '_RSeQC'
+    - '_screen.txt'
+
+remove_sections:
+    - fastqc_sequence_counts
+    - rseqc-read_gc 
+    - rseqc-read_dups
+    - rseqc-bam_stat

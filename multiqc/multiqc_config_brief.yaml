@@ -1,0 +1,72 @@
+make_data_dir: false
+
+run_modules:
+    - fastqc
+    - fastq_screen
+    - custom_content
+
+custom_logo: '/Users/kohl/Projects/pipeline_scripts/multiqc/cu_anschutz_logo.png'
+
+title: 'RNA-seq data'
+subtitle: 'Brief QC report'
+intro_text: 'Jones_Dp16_BDNFoe'
+
+report_header_info:
+    - Contact E-mail: 'kohl.kinning@cuanschutz.edu'
+    - Application Type: 'RNA-seq'
+#    - Sequencing Platform: 'Hiseq 4000 system'
+#    - Sequencing Setup: '2x150'
+
+#show the FastQC module twice for trimmed and untrimmed
+module_order:
+    - general_stats:
+        path_filters:
+        - 'FASTQC*'
+#    - fastqc:
+#        name: 'FastQC (raw)'
+#        info: 'This section of the report shows FastQC results before  adapter trimming.'
+#        path_filters_exclude:
+#            - '*FASTQC_post_filtered*'
+    - fastqc:
+        name: 'FastQC (trimmed)'
+        info: 'This section of the report shows FastQC results after adapter trimming and quality filtering.'
+        target: ''
+        path_filters_exclude:
+            - '*FASTQC_pre_filtered*'
+
+#extra_sample_names_ignore:
+    - 'bowtie.*.*'
+
+#extra_fn_clean_trim:
+#    - 'trimmed_'
+#
+#fn_clean_exts:
+#    - '.fastq.gz'
+#    - '_screen'
+#    - 'trimmed_'
+#    - '.mapped'
+#    - '_HTSeq'
+#    - '_RSeQC'
+#
+
+report_section_order:
+    general_stats:
+        order: 120
+    fastqc:
+        order: 110
+    fastqc_status_checks:
+        order: -1000
+    fastq_screen:
+        order: 90
+    custom_read_summary_table:
+        order: 80
+    custom_read_summary_graph:
+        order: 70
+    custom_feature_counts_graph:
+        order: 60
+
+remove_sections:
+    - rseqc-read_dups
+    - rseqc-infer_experiment
+    - rseqc-read_gc 
+
