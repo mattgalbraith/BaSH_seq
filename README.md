@@ -6,6 +6,20 @@ This pipeline processes high-throughput sequencing data (PE/SE) through QC,trim/
 This specific version was customized to run on HDC Eureka instances (running CentOS 7) on Google Compute Engine and uses a custom Conda environment to supply most of the tools/dependencies required by each stage, with only a few problemmatic tools running from Singularity containers.
 
 
+```
+BaSH_seq/
+├── CutRun
+│   └── stageScripts
+├── RNAseq
+│   └── stageScripts
+├── misc
+├── multiqc
+├── other_scripts
+├── pipeline_templates
+└── stageScripts
+```
+
+
 ## Dependencies:
 Bash
 Slurm
