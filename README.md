@@ -10,13 +10,17 @@ This specific version was customized to run on HDC Eureka instances (running Cen
 Bash
 Slurm
 Tools required by each stage (in PATH / Conda env / Containers); Conda / Docker/Singularity
-References
+References and related files
 MultiQC script (need to update and integrate)
 R (if integrating RPKM script)
 
-## Installation and setup  
-will need to modify paths to stage scripts, references, etc
+## Installation and setup 
+need to download required refs etc 
+need to modify paths to stage scripts, references, etc
 fastq_screen.conf
+For Conda version: need to add env.yaml
+For container version: modify stage scripts to use correct call to each tool or container
+
 
 
 ## Pre-run steps?
