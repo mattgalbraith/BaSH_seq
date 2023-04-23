@@ -9,14 +9,14 @@ This specific version was customized to run on HDC Eureka instances (running Cen
 ```
 BaSH_seq/
 ├── CutRun
-│   └── stageScripts
+│   └── stageScripts  # Cut&Run-specific stage scripts + symbolic links to common stage scripts
 ├── RNAseq
-│   └── stageScripts
+│   └── stageScripts  # RNAseq-specific stage scripts + symbolic links to common stage scripts
 ├── misc
 ├── multiqc
 ├── other_scripts
 ├── pipeline_templates
-└── stageScripts
+└── stageScripts                # common stage scripts live here
 ```
 
 
