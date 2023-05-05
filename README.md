@@ -6,7 +6,7 @@ This pipeline processes high-throughput sequencing data (PE/SE) through QC,trim/
 This specific version was customized to run on HDC Eureka instances (running CentOS 7) on Google Compute Engine and uses a custom Conda environment to supply most of the tools/dependencies required by each stage, with only a few problemmatic tools running from Singularity containers.
 
 
-```bash
+```
 BaSH_seq/
 ├── CutRun
 │   └── stageScripts  # Cut&Run-specific stage scripts + symbolic links to common stage scripts
@@ -16,7 +16,7 @@ BaSH_seq/
 ├── multiqc
 ├── other_scripts
 ├── pipeline_templates
-└── stageScripts  # common stage scripts live here
+└── stageScripts                # common stage scripts live here
 ```
 
 
