@@ -7,6 +7,7 @@ PIPELINE_VERSION=0.1
 # SUMMARY: 
 # This script is designed to be run once for each sample (incl. both reads for PE) and is executed by submitAll.sh once per sample with the appropriate arguments.
 # Version 0.1: initial version for HDC Eureka based on RNAseq pipeline v0.8
+# Version 0.2: adding Stage 13_SPIKEIN_COUNTS
 # 
 # Steps to run pipeline:
 # 1) In Project/ : create top-level working dirs: Project/raw_date and Project/analysis_date
@@ -148,6 +149,12 @@ SUBMIT_LOG=$5
         ## -strand <both/separate>                  # using switch based on STRAND_TYPE
         # Output format
             # use switch for bedgraph (default for HOMER) vs bigwig     # not currently implemented
+
+# 13 SPIKE IN COUNTS
+        # Stage 13 should only be run if nucleosome spike-in was used
+        SPIKEIN_DIRNAME="$THIS_ANALYSIS_DIR"/Spikeins
+        # Does not currently use any additional arguments
+
 
 
 ##### DO NOT EDIT PAST HERE FOR NORMAL USAGE #####
@@ -1216,6 +1223,62 @@ Read 2 fastq file: "$FASTQR2_FILE"
        
                 echo -e "${green}"$JOB_NAME" complete.${NC}
                 "
+                # update the stage
+                START_AT_STAGE=$(($START_AT_STAGE+1))
+                STAGE_NAME=""
+                STAGE_OUTPUT=""
+                STAGE_ERROR=""
+        fi
+
+        # check if we need to exit
+        if [ $END_AT_STAGE -eq $(($START_AT_STAGE-1)) ]
+        then
+                echo -e "------\n${green}"$PIPELINE_TITLE" run ending at stage "$END_AT_STAGE"${NC}\n------\n"
+                exit 0
+        fi
+
+        # 13) SPIKE IN COUNTS
+        # run the stage
+        STAGE_NAME="13-SPIKEIN-COUNTS"
+        if [ $START_AT_STAGE -eq 13 ]
+        then
+                JOB_NAME=stage-"$STAGE_NAME"-"$PIPELINE_TYPE"-"$THIS_SAMPLE_NAME"
+                STAGE_OUTPUT="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/std_out_err/"$JOB_NAME"
+                STAGE_ERROR="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/std_out_err/"$JOB_NAME"
+                echo -e "${blue}Running "$JOB_NAME"${NC}
+                "   
+                
+                # sh 13_SPIKEIN_COUNTS.sh
+                # Usage: 13_SPIKEIN_COUNTS.sh <SEQ_TYPE> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <SPIKEIN_DIRNAME>
+
+                sbatch -W \
+                        --account="$THIS_USER_ACCOUNT" \
+                        --job-name="$JOB_NAME" \
+                        --output="$STAGE_OUTPUT".%j.%N.out \
+                        --error="$STAGE_ERROR".%j.%N.err \
+                        --partition=c2s8 \
+                        --wrap="\
+                                sh "$PIPELINE_SCRIPTS_DIR"/13_SPIKEIN_COUNTS.sh "$SEQ_TYPE" "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$SPIKEIN_DIRNAME""
+
+                # Catch output status
+                OUTPUT_STATUS=$?
+
+                # Get Job ID
+                getJobID "$JOB_NAME"
+
+                # Check for SLURM error: <function> <$STAGE_ERROR> <$JOB_ID>
+                slurmErrorCheck "$STAGE_ERROR" "$JOB_ID"
+
+                # Check for exit code error: <function> <$JOB_ID>
+                slurmExitCodeCheck "$JOB_ID"
+                
+                # Copy standard output and standard error to logfile: <function> <Title> <$STAGE_ERROR> <$JOB_ID>
+                copyOutErrLog "$STAGE_NAME" "$STAGE_ERROR" "$JOB_ID"
+
+                # check output status: <function> <stage label>
+                checkOutputStatus "$STAGE_NAME"
+       
+                echo -e "${green}"$JOB_NAME" complete.${NC}\n"
                 # update the stage
                 START_AT_STAGE=$(($START_AT_STAGE+1))
                 STAGE_NAME=""
