@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_TITLE=analysis_setup.sh
-SCRIPT_VERSION=0.8
+SCRIPT_VERSION=0.9
 # DATE: 06-30-2021
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
@@ -17,6 +17,7 @@ SCRIPT_VERSION=0.8
 # Version 0.6: Adds SUBMIT_LOG arg passed to pipeline script for getting JOB_ID and error checking
 # Version 0.7: added SBATCH --account for pipeline wrapper script; added SBATCH -p longrun and SBATCH --time=100:00:00 to prevent pipeline script from timing out (especially while waiting for resources)
 # Version 0.8: Intitial setup for running on HDC Eureka
+# Version 0.9 102623: updating to run on Proton2
 #
 # The submitAll.sh script should now be run from the appropriate Project/analysis_date/scripts directory as follows:
 # sbatch -o submitAll.sh.log submitAll.sh
@@ -151,7 +152,7 @@ echo "Writing commands to $(pwd)/scripts/submitAll_"$START_AT_STAGE"-"$END_AT_ST
 echo "#!/bin/sh
 
 #SBATCH -J SUBMIT_$(basename ${PIPELINE_SCRIPT%.sh})
-#SBATCH -p c2s4_nonpre
+#SBATCH -p defq
 #SBATCH -o ./submitAll_"$START_AT_STAGE"-"$END_AT_STAGE".sh.log
 #SBATCH -D ./
 #SBATCH --nodes=1
@@ -181,6 +182,7 @@ SCRIPT_VERSION="$SCRIPT_VERSION"
 # Arguments passed to "$PIPELINE_SCRIPT":
 # THIS_SAMPLE_NAME: $(cat sample_locations.txt | awk '{print $1}' | uniq | tr "\n" ";" )
 # THIS_ANALYSIS_DIR: $(pwd)/
+# RAW_DIR: $(for i in $(cat sample_locations.txt | awk '{print $2}'); do dirname $i; done | uniq | tr "\n" ";")
 # START_AT_STAGE: "$START_AT_STAGE"
 # END_AT_STAGE: "$END_AT_STAGE"
 # SUBMIT_LOG: "scripts/$(basename "$PIPELINE_SCRIPT").SAMPLE.Stage"$START_AT_STAGE"-"$END_AT_STAGE".log" 
@@ -191,7 +193,9 @@ SCRIPT_VERSION="$SCRIPT_VERSION"
 for i in $(cat sample_locations.txt | awk '{print $1}' | uniq) # the uniq step ensures a single command per SAMPLE for PE data (rather than 1 per fastq file as listed in sample_locations.txt) (v0.2: removed the sort to preserve sensible order)
 do 
         SUBMIT_LOG="$(pwd)/scripts/$(basename "$PIPELINE_SCRIPT")."$i".Stage"$START_AT_STAGE"-"$END_AT_STAGE".log"
-        echo "(nohup sh "$PIPELINE_SCRIPT" "$i" "$PWD" "$START_AT_STAGE" "$END_AT_STAGE" "$SUBMIT_LOG" &> "$SUBMIT_LOG") &"
+        # NEW: NEED TO GET RAW DIR FOR MOUNTING TO SOME CONTAINERS, eg FASTQC
+        RAW_DIR=$(dirname $(grep "$i" sample_locations.txt | awk '{print $2}' | head -n1))
+        echo "(nohup sh "$PIPELINE_SCRIPT" "$i" "$PWD" "$RAW_DIR" "$START_AT_STAGE" "$END_AT_STAGE" "$SUBMIT_LOG" &> "$SUBMIT_LOG") &"
 done >> scripts/submitAll_"$START_AT_STAGE"-"$END_AT_STAGE".sh
 
 # need to execute commands above as subshells: (CMD) &
