@@ -61,8 +61,10 @@ SUBMIT_LOG=$6
         TRACKS_DIRNAME="$THIS_ANALYSIS_DIR"/Tracks
         COMMENTS="PIPELINE RUN ON PROTON2"     # Add comments explaining this version of the analysis
         # NEW for 0.9: NEED TO GET RAW DIR FOR MOUNTING TO CONTAINERS THAT NEED TO READ SYMLINKS TO FASTQ FILES, eg FASTQC
-        # RAW_DIR
+        # RAW_DIR is passed to Pipeline script via Analysis_seetup.sh script
         # NEED TO ADD THIS TO STAGES THAT NEED TO SEE RAW_DIR
+        # NEW for 0.9: Also need to mount references dir for stages that need to read references etc, eg FASTQ_SCREEN, HISAT2
+        REFS_DIR=/data1/references/
 
 ## STAGE-SPECIFIC VARIABLES TO EDIT HERE ##
 # 0 PRE_FASTQC
@@ -86,11 +88,10 @@ SUBMIT_LOG=$6
         # uncommon options are either defaults or set in 2_POST_FASTQC.sh
 
 # 3 FASTQ SCREEN
-        # common options
-        ## SUBSET=                       #NOT YET IMPLEMENTED
-        ## ALIGNER=
-        ## PAIRED=YES/NO                 #NEED TO IMPLEMENT AS IF STATEMENT
+        # common options:
         # uncommon options are either defaults or set in 3_FASTQ_SCREEN.sh
+        FASTQSCREEN_CONF=/data1/matt_testing/BaSH_seq_test/BaSH_seq/misc/fastq_screen.conf
+        FASTQSCREEN_SIF=/data1/containers/fastqscreen0.15.2.sif
 
 # # 4 MAPPING TOPHAT2_ALIGN
 #         # common options
@@ -733,16 +734,28 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/3_FASTQ_SCREEN.sh
-                #Usage: 3_FASTQ_SCREEN.sh <SEQ_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <THREADS>
+                #Usage: 3_FASTQ_SCREEN.sh <SEQ_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <THREADS> <FASTQSCREEN_CONF> <FASTQSCREEN_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR> <REFS_DIR>
                                
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s8 \
+                        --partition=defq \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/3_FASTQ_SCREEN.sh "$SEQ_TYPE" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" 8\
+                                sh "$PIPELINE_SCRIPTS_DIR"/3_FASTQ_SCREEN.sh \
+                                "$SEQ_TYPE" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$THIS_SAMPLE_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" \
+                                "$QC_DIR_NAME" \
+                                16 \
+                                "$FASTQSCREEN_CONF" \
+                                "$FASTQSCREEN_SIF" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$RAW_DIR" \
+                                "$REFS_DIR"\
                                 "
 
                 # Catch output status
