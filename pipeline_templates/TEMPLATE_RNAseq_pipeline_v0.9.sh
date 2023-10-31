@@ -629,7 +629,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/2_POST_FASTQC.sh
-                #Usage: 2_POST_FASTQC.sh <SAMPLE_DIR> <SAMPLE_NAME> <FASTQ_FILE_NAME> <QC_DIR_NAME> <OUT_DIR_NAME> <THREADS>
+                #Usage: 2_POST_FASTQC.sh <SAMPLE_DIR> <SAMPLE_NAME> <FASTQ_FILE_NAME> <QC_DIR_NAME> <OUT_DIR_NAME> <THREADS> <FASTQC_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR>
 
                 # Read 1
                 JOB_NAME=stage-"$STAGE_NAME"_R1-"$PIPELINE_TYPE"-"$THIS_SAMPLE_NAME"
@@ -642,9 +642,9 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s4 \
+                        --partition=defq \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8
+                                sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                 "
 
                 # Catch output status
@@ -679,9 +679,9 @@ Read 2 fastq file: "$FASTQR2_FILE"
                             --job-name="$JOB_NAME" \
                             --output="$STAGE_OUTPUT".%j.%N.out \
                             --error="$STAGE_ERROR".%j.%N.err \
-                            --partition=c2s4 \
+                            --partition=defq \
                             --wrap="\
-                                    sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8\
+                                    sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                     "
 
                     # Catch output status
