@@ -2,7 +2,7 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=1_FASTQ_MCF_BB.sh
-SCRIPT_VERSION=0.5
+SCRIPT_VERSION=0.6
 # DATE: 06-30-2021
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
@@ -10,6 +10,7 @@ SCRIPT_VERSION=0.5
 # This version (BB) uses bbduk from bbtools suite instead of fastx_trimmer - should be faster.
 #
 # v0.5 modified call to bbduk.sh so that it relies on PATH rather than pointing to /Matt/Tools/...
+# v0.6 103023: updating to use BBTOOLS and EAUTILS Singularity/Apptainers
 
 
 # variables from command line via <XXseq>_pipeline.sh:
@@ -26,11 +27,15 @@ MIN_ADAPTER=${10}
 MIN_PERC_OCCUR=${11}
 MAX_PERC_DIFF=${12}
 CONTAMINANTS_FASTA=${13}
+BBTOOLS_SIF=${14}
+EAUTILS_SIF=${15}
+THIS_ANALYSIS_DIR=${16}
+RAW_DIR=${17}
 # other variables:
 DISCARDED_READS_DIRNAME="fastq-mcf_Discarded"
 TRIMMING_SUMMARY_FILENAME="fastq-mcf_trimming_summary.txt"
-FASTQ_MCF_VERSION="$(which fastq-mcf | tr "\/" "\t" | cut -f8)" # fastq-mcf -h | grep "Version"
-BBDUK_VERSION="$(echo atcg | bbduk.sh in=stdin.fa out=/dev/null 2>&1 | grep Version | cut -d " " -f2)"
+FASTQ_MCF_VERSION=`singularity run "$EAUTILS_SIF" bash -c 'fastq-mcf -h | grep Version'`
+BBDUK_VERSION=`singularity run "$BBTOOLS_SIF" bash -c 'echo atcg | bbduk.sh in=stdin.fa out=/dev/null 2>&1 | grep Version'`
 # 2 more below:
 # DISCARDED_READS_DIR="$SAMPLE_DIR"/processed/"$DISCARDED_READS_DIRNAME"
 # TRIMMED_READS_DIR="$SAMPLE_DIR"/processed
@@ -57,6 +62,10 @@ Arguments for "$SCRIPT_TITLE":
 (11) MIN_PERC_OCCUR "$MIN_PERC_OCCUR" (-t option)
 (12) MAX_PERC_DIFF "$MAX_PERC_DIFF" (-p option)
 (13) CONTAMINANTS_FASTA: "$CONTAMINANTS_FASTA"
+(14) BBTOOLS_SIF: "$BBTOOLS_SIF"
+(15) EAUTILS_SIF: "$EAUTILS_SIF"
+(16) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
+(17) RAW_DIR: "$RAW_DIR"
 bbduk.sh version: "$BBDUK_VERSION"
 bbduk.sh options:
 in="$FASTQR1_FILE"
@@ -78,11 +87,11 @@ fastq-mcf options:
 -o 	(output file + stats go to stdout)
 "
 
-EXPECTED_ARGS=13
+EXPECTED_ARGS=17
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo -e "Usage: "$SCRIPT_TITLE" <SEQ_TYPE> <READ_LENGTH> <SAMPLE_DIR> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <PROCESSED_DIR_NAME> <OUT_DIR_NAME> <MIN_QUAL> <MIN_SEQ_LENGTH> <MIN_ADAPTER> <MIN_PERC_OCCUR> <MAX_PERC_DIFF> <CONTAMINANTS_FASTA>
+        echo -e "Usage: "$SCRIPT_TITLE" <SEQ_TYPE> <READ_LENGTH> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <MIN_QUAL> <MIN_SEQ_LENGTH> <MIN_ADAPTER> <MIN_PERC_OCCUR> <MAX_PERC_DIFF> <CONTAMINANTS_FASTA> <BBTOOLS_SIF> <EAUTILS_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" but "$#" were provided:${NC}
         "$@"
         "
@@ -126,20 +135,18 @@ fi
 	if [ ! -d "$TRIMMED_READS_DIR" ]
 	then
 		echo "Making directory: "$TRIMMED_READS_DIR""
-		mkdir -- parents "$TRIMMED_READS_DIR"
+		mkdir --parents "$TRIMMED_READS_DIR"
 	fi
 
 	# Make temp directory for n+1 trimmed files
-	FASTQ_TMPDIR="$TMPDIR"/fastq_temp/"$SAMPLE_NAME"
-	# if [ -d! "$FASTQ_TMPDIR" ]
-	# then
-	# 	mkdir "$FASTQ_TMPDIR"
-	# fi
+	# FASTQ_TMPDIR="$TMPDIR"/fastq_temp/"$SAMPLE_NAME"
+	FASTQ_TMPDIR=/tmp/fastq_temp/"$SAMPLE_NAME" # v0.6: updated for Proton2
+	#
 	if [ -d "$FASTQ_TMPDIR" ]
 	then
 		rm -R "$FASTQ_TMPDIR" 	# Better to overwrite in case error exit leaves previous version (bbduk default prevents overwrite)
 	fi
-	mkdir "$FASTQ_TMPDIR"
+	mkdir --parents "$FASTQ_TMPDIR"
 
 	DISCARDED_READS_DIR="$SAMPLE_DIR"/Processed/"$DISCARDED_READS_DIRNAME"
 	if [ ! -d "$DISCARDED_READS_DIR" ]
@@ -179,7 +186,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 					echo -e "Read length specified as: "$READ_LENGTH"\nRead length of "$[${READ_LENGTH}+1]" found - trimming off n+1 base using bbduk in single-end mode..."
 
 					# Trim off n+1 base
-					srun bbduk.sh \
+					srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" "$BBTOOLS_SIF" bbduk.sh \
 					in="$FASTQR1_FILE" \
 					out="$FASTQ_TMPDIR"/"$(basename "$FASTQR1_FILE")" \
 					int=f \
@@ -224,7 +231,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 						then
 							echo -e "Read length specified as: "$READ_LENGTH"\nRead lengths of "$[${READ_LENGTH}+1]" found - trimming off n+1 base using bbduk in paired-end mode..."
 							# Trim off n+1 base
-							srun bbduk.sh \
+							srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" "$BBTOOLS_SIF" bbduk.sh \
 							in1="$FASTQR1_FILE" \
 							in2="$FASTQR2_FILE" \
 							out1="$FASTQ_TMPDIR"/"$(basename "$FASTQR1_FILE")" \
@@ -267,7 +274,8 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 	then
 		echo "Running fastq-mcf in single-end mode for "$SAMPLE_NAME"..."
 
-		srun fastq-mcf -S -q "$MIN_QUAL" -l "$MIN_SEQ_LENGTH" "$CONTAMINANTS_FASTA" "$FASTQR1_FILE" \
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$CONTAMINANTS_FASTA":"$CONTAMINANTS_FASTA" "$EAUTILS_SIF" fastq-mcf \
+			-S -q "$MIN_QUAL" -l "$MIN_SEQ_LENGTH" "$CONTAMINANTS_FASTA" "$FASTQR1_FILE" \
 			-o "$TRIMMED_READS_DIR"/trimmed_"$FASTQR1_FILE_basename" 1> "$QC_DIR_NAME"/fastq-mcf/"$SAMPLE_NAME"/"$TRIMMING_SUMMARY_FILENAME"
 		
 		# check output status
@@ -284,7 +292,8 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 		echo "Running fastq-mcf in paired-end mode for "$SAMPLE_NAME"..."
 
 		FASTQR2_FILE_basename=`basename $FASTQR2_FILE`
-		srun fastq-mcf -S -q "$MIN_QUAL" -l "$MIN_SEQ_LENGTH" -s "$MIN_ADAPTER" -t "$MIN_PERC_OCCUR" -p "$MAX_PERC_DIFF"  "$CONTAMINANTS_FASTA" "$FASTQR1_FILE" "$FASTQR2_FILE" \
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$CONTAMINANTS_FASTA":"$CONTAMINANTS_FASTA" "$EAUTILS_SIF" fastq-mcf \
+			-S -q "$MIN_QUAL" -l "$MIN_SEQ_LENGTH" -s "$MIN_ADAPTER" -t "$MIN_PERC_OCCUR" -p "$MAX_PERC_DIFF"  "$CONTAMINANTS_FASTA" "$FASTQR1_FILE" "$FASTQR2_FILE" \
 			-o "$TRIMMED_READS_DIR"/trimmed_"$FASTQR1_FILE_basename" -o "$TRIMMED_READS_DIR"/trimmed_"$FASTQR2_FILE_basename" 1> "$QC_DIR_NAME"/fastq-mcf/"$SAMPLE_NAME"/"$TRIMMING_SUMMARY_FILENAME"
 		
 		# check output status
@@ -302,7 +311,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 
 	mv $TRIMMED_READS_DIR/*.skip.gz $DISCARDED_READS_DIR/.
 
-	# remove fastx trimmed FASTQ files as they should longer be needed
+	# remove trimmed FASTQ files as they should longer be needed
 	if [ -d "$FASTQ_TMPDIR" ]
 	then
 		echo "removing temporary directory: "$FASTQ_TMPDIR""

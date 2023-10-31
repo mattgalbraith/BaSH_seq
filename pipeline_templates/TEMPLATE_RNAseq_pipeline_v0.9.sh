@@ -14,7 +14,7 @@ PIPELINE_VERSION=0.9
 # Version 0.7: Use HISAT2 instead of TOPHAT2, step 7 is redunadant as bam is sorted in alignment step, but I didn't change much. Double sorting shouldn't hurt anything. Changed the output name in the alignment step (removed "sorted")
 # Version 0.8_TEST: initial setup on HDC Eureka
 # Version 0.8: initial working version for HDC Eureka 070621
-# Version 0.9 102623: updating to run on Proton2
+# Version 0.9 102623: updating to run on Proton2 with Singularity/Apptainers
 # 
 # Steps to run pipeline:
 # 1) In Project/ : create top-level working dirs: Project/raw_date and Project/analysis_date
@@ -59,8 +59,8 @@ SUBMIT_LOG=$6
         ALIGNMENT_DIRNAME="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Alignments   # NEED TO IMPLEMENT IN STAGE 4
         COUNTS_DIRNAME="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Counts
         TRACKS_DIRNAME="$THIS_ANALYSIS_DIR"/Tracks
-        COMMENTS="PIPELINE TESTING ON PROTON2"     # Add comments explaining this version of the analysis
-        # NEW: NEED TO GET RAW DIR FOR MOUNTING TO SOME CONTAINERS, eg FASTQC
+        COMMENTS="PIPELINE RUN ON PROTON2"     # Add comments explaining this version of the analysis
+        # NEW for 0.9: NEED TO GET RAW DIR FOR MOUNTING TO CONTAINERS THAT NEED TO READ SYMLINKS TO FASTQ FILES, eg FASTQC
         # RAW_DIR
         # NEED TO ADD THIS TO STAGES THAT NEED TO SEE RAW_DIR
 
@@ -76,8 +76,10 @@ SUBMIT_LOG=$6
         MIN_ADAPTER=1.6           # -s option; Log2 scale for adapter minimum-length-match; default=2.2 ie ~4.5)
         MIN_PERC_OCCUR=0.25     # -t option; % occurance threshold before adapter clipping; default=0.25)
         MAX_PERC_DIFF=10        # -p option; Maximum adapter difference percentage; default=10)
-        CONTAMINANTS_FASTA=/data1/references/Contaminants/contaminants.fa
-        #uncommon options are either defaults or set in 1_FASTQ_MCF.sh
+        CONTAMINANTS_FASTA=/data1/references/Contaminants/contaminants.fa # need to bind this to container
+        BBTOOLS_SIF=/data1/containers/bbtools39.01.sif
+        EAUTILS_SIF=/data1/containers/eautils1.04.807.sif
+        # uncommon options are either defaults or set in 1_FASTQ_MCF.sh
         # see also: https://github.com/ExpressionAnalysis/ea-utils/blob/wiki/FastqMcf.md
 
 # 2 POST_FASTQC
@@ -554,14 +556,14 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 fi
 
                 #sh $PIPELINE_SCRIPTS_DIR/1_FASTQ_MCF.sh
-                #Usage: 1_FASTQ_MCF.sh <SEQ_TYPE> <READ_LENGTH> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <MIN_QUAL> <MIN_SEQ_LENGTH> <MIN_ADAPTER> <MIN_PERC_OCCUR> <MAX_PERC_DIFF> <CONTAMINANTS_FASTA>                                      
+                #Usage: 1_FASTQ_MCF.sh <SEQ_TYPE> <READ_LENGTH> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <MIN_QUAL> <MIN_SEQ_LENGTH> <MIN_ADAPTER> <MIN_PERC_OCCUR> <MAX_PERC_DIFF> <CONTAMINANTS_FASTA> <BBTOOLS_SIF> <EAUTILS_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR>                            
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s8 \
+                        --partition=defq \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/1_FASTQ_MCF_BB.sh \
                                 "$SEQ_TYPE" \
@@ -576,7 +578,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                                 "$MIN_ADAPTER" \
                                 "$MIN_PERC_OCCUR" \
                                 "$MAX_PERC_DIFF" \
-                                "$CONTAMINANTS_FASTA"\
+                                "$CONTAMINANTS_FASTA" \
+                                "$BBTOOLS_SIF" \
+                                "$EAUTILS_SIF" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$RAW_DIR"
                                 "
 
                 # Catch output status
