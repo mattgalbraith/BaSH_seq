@@ -37,7 +37,6 @@ echo "------"
                 echo "Writing to sample_locations.txt"
                 echo -e "$1\t$PWD"/${NAME%.fastq.gz}_merged.fastq.gz"\t$2" >> ${NAME%.fastq.gz}_sample_locations.txt
                 echo "Done."
-        done
 
 echo "------"
 echo "FINISHED at "$(date "+%Y-%m-%d-%H%M")""
