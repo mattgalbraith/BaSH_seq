@@ -26,7 +26,7 @@ echo "Started at: "$(date "+%Y-%m-%d-%H%M")""
 echo "------"
 
                 FILES=$(echo "$3 $4 $5")
-                NAME="$(basename "$3")
+                NAME=$(basename "$3")
                 echo "Merging files for ${NAME%.fastq.gz}..."
                 echo "Source files:"
                 echo "$(for i in $(echo "$FILES" | tr "\t" "\n"); do echo ""$i"    Reads: $(( $(zcat $i | wc -l) / 4 ))"; done)"
