@@ -206,6 +206,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 				-2 $FASTQR2_FILE | \
 				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
 				-@ 4 -m 32G -T "$SAMTOOLS_TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
+				# -@ 12 threads with -m 32G causes samtools mem error on Proton2
 			
 			# check output status
 			if [ $? -ne 0 ]
