@@ -70,8 +70,8 @@ bbduk.sh version: "$BBDUK_VERSION"
 bbduk.sh options:
 in="$FASTQR1_FILE"
 in="$FASTQR2_FILE"
-out="$TMPDIR"/fastq_temp/"$(basename "$FASTQR1_FILE")"
-out="$TMPDIR"/fastq_temp/"$(basename "$FASTQR2_FILE")"
+out=/tmp/fastq_temp/"$(basename "$FASTQR1_FILE")"
+out=/tmp/fastq_temp/"$(basename "$FASTQR2_FILE")"
 int=f 	Interleaved PE = false
 ftr=$[${READ_LENGTH}-1] 	Force trim right = last base to keep (0-based, exclusive)
 -Xmx 64G
