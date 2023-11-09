@@ -121,20 +121,18 @@ SUBMIT_LOG=$6
 # 4 MAPPING                             # Should test different insert limits and soft-clipping here - may also add second mapping stage...
         # common options
         ALIGNER="HISAT2_ALIGN"      # <BOWTIE2> or <HISTA2-DNA>
-        ALIGNER_INDEX="$HOME"/references/GRCh38/Gencode/annotation/gencode.v33.basic # HUMAN
-        ALIGNER_SS="$HOME"/references/GRCh38/Gencode/annotation/gencode.v33.basic.annotation.ss # HUMAN
-        # ALIGNER_INDEX="$HOME"/references/GRCm38/Gencode/annotation/gencode.vM24.basic # MOUSE
-        # ALIGNER_SS="$HOME"/references/GRCm38/Gencode/annotation/gencode.vM24.basic.annotation.ss # MOUSE
-        # ALIGNER_INDEX="$HOME"/references/Bowtie2_UCSC_hg19_ERCC_6/UCSC.hg19_ERCC_6.genome
-        # ^ this index includes the 6 ERCC spike-ins (3 labelled, 3 unlabelled) 
-        # FOR HUMAN: "$HOME"/references/Homo_sapiens/UCSC/hg19/Sequence/Bowtie2Index/genome
+        ALIGNER_INDEX="$REFS_DIR"/GRCh38/Gencode/annotation/gencode.v33.basic # HUMAN
+        ALIGNER_SS="$REFS_DIR"/GRCh38/Gencode/annotation/gencode.v33.basic.annotation.ss # HUMAN
+        # ALIGNER_INDEX="$REFS_DIR"/GRCm38/Gencode/annotation/gencode.vM24.basic # MOUSE
+        # ALIGNER_SS="$REFS_DIR"/GRCm38/Gencode/annotation/gencode.vM24.basic.annotation.ss # MOUSE
+        # For Spike-ins:
+        # ALIGNER_INDEX="$HOME"/references/Bowtie2_UCSC_hg19_ERCC_6/UCSC.hg19_ERCC_6.genome NOT CURRENTLY IMPLEMENTED
+        # ^ this index includes the 6 ERCC spike-ins (3 labelled, 3 unlabelled)
+        # For iGenomes ref (older analyses):
+        # FOR HUMAN: "$REFS_DIR"/igenomes/Homo_sapiens/UCSC/hg19/Sequence/Bowtie2Index/genome
         # FOR MOUSE: 
-        ALIGNER_MININS=0                                                         # NOT YET IMPLEMENTED
-        ALIGNER_MAXINS=500                                                       # NOT YET IMPLEMENTED
-        # Bowtie2-specific options:
-        BOWTIE_MODE="--end-to-end"        # --end-to-end (default) or --local   # NOT YET IMPLEMENTED
-        BOWTIE_SENS="--sensitive"         # default                             # NOT YET IMPLEMENTED
-        DOVETAIL=                                                               # NOT YET IMPLEMENTED
+        HISAT2_SIF=/data1/containers/hisat2_2.2.1.sif
+        SAMTOOLS_SIF=/data1/containers/samtools1.16.1.sif
         # uncommon options are either defaults or set in 4_<ALIGNER>.sh
 
 # 5 ADD RGID
@@ -793,7 +791,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
         fi
 
 
-# # 4) MAPPING
+# # 4) MAPPING using TOPHAT2
 #         # run the stage
 #         STAGE_NAME="4-TOPHAT2-ALIGN"
 #         if [ $START_AT_STAGE -eq 4 ]
@@ -880,7 +878,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
 #         fi
 
 
-# 4) MAPPING
+# 4) MAPPING using HISAT2
         # run the stage
         STAGE_NAME="4-"$ALIGNER""
         if [ $START_AT_STAGE -eq 4 ]
@@ -892,16 +890,32 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/4_HISAT2_ALIGN.sh
-                #Usage: 4_HISAT2.sh <SEQ_TYPE> <STRAND_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <ALIGNER_INDEX> <ALIGNER_SS> <BAM_OUT_FILENAME> <OUT_DIR_NAME> <THREADS>
+                #Usage: 4_HISAT2.sh <SEQ_TYPE> <STRAND_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <ALIGNER_INDEX> <ALIGNER_SS> <BAM_OUT_FILENAME> <OUT_DIR_NAME> <THREADS> <HISAT2_SIF> <SAMTOOLS_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR> <REFS_DIR>
                                            
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s30 \
+                        --partition=defq \
                         --wrap="\
-                                sh $PIPELINE_SCRIPTS_DIR/4_"$ALIGNER".sh "$SEQ_TYPE" "$STRAND_TYPE" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$ALIGNER_INDEX" "$ALIGNER_SS" "$THIS_SAMPLE_NAME".mapped.no-rgid.bam Alignments 16\
+                                sh $PIPELINE_SCRIPTS_DIR/4_"$ALIGNER".sh \
+                                "$SEQ_TYPE" \
+                                "$STRAND_TYPE" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$THIS_SAMPLE_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" \
+                                "$ALIGNER_INDEX" \
+                                "$ALIGNER_SS" \
+                                "$THIS_SAMPLE_NAME".mapped.no-rgid.bam \
+                                Alignments \
+                                16 \
+                                "$HISAT2_SIF" \
+                                "$SAMTOOLS_SIF" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$RAW_DIR" \
+                                "$REFS_DIR"\
                                 "
 
                 # Catch output status

@@ -2,13 +2,14 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=4_HISAT2-DNA.sh
-SCRIPT_VERSION=0.2
+SCRIPT_VERSION=0.3
 # DATE: 01-29-2020
 # AUTHOR: Matthew Galbraith, Kohl Kinning
 # SUMMARY: 
 # This script is designed to be run once for each sample (incl. both reads for PE) and is executed by <TTseq>_pipline.sh
 # Reads are aligned using HISAT2 and directly converted to sorted BAM by samtools sort
 # Version 0.2: Removed --no-spliced-alignment and --maxins parameters for general RNASeq use. Added splice-sites param, a file generated when building the index
+# Version 0.3 103123: updating to use FASTQC Singularity/Apptainer
 
 
 
@@ -24,14 +25,17 @@ HISAT2_SS=${8}
 BAM_OUT_FILENAME=${9}
 OUT_DIR_NAME=${10}
 THREADS=${11}
-
-# STRAND_TYPE=${9}
-# MATE_INNER_DIST=${10}
+HISAT2_SIF=${12}
+SAMTOOLS_SIF=${13}
+THIS_ANALYSIS_DIR=${14}
+RAW_DIR=${15}
+REFS_DIR=${16}
 
 # other variables
 ALIGNMENT_SUMMARY_FILENAME="hisat_alignment_summary.txt"
-HISAT2_VERSION="$(hisat2 --version | head -n1 | awk '{print $3}')"
-SAMTOOLS_VERSION="$(samtools --version 2>&1)"
+# HISAT2_VERSION="$(hisat2 --version | head -n1 | awk '{print $3}')"
+HISAT2_VERSION=`singularity run /data1/containers/hisat2_2.2.1.sif bash -c 'hisat2 --version | head -n1'`
+SAMTOOLS_VERSION="$(samtools --version 2>&1)" # NEED TO ADD SAMTOOLS TO CONTAINER
 
 blue="\033[0;36m"
 green="\033[0;32m"
@@ -53,6 +57,11 @@ Arguments for 4_HISAT2-DNA.sh:
 (9) BAM_OUT_FILENAME: "$BAM_OUT_FILENAME"
 (10) OUT_DIR_NAME: "$OUT_DIR_NAME"
 (11) THREADS: "$THREADS"
+(12) HISAT2_SIF: "$HISAT2_SIF"
+(13) SAMTOOLS_SIF: "$SAMTOOLS_SIF"
+(14) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
+(15) RAW_DIR: "$RAW_DIR"
+(16) REFS_DIR: "$REFS_DIR"
 hisat2 version: "$HISAT2_VERSION"
 hisat2 options:
 # --phred33
@@ -64,22 +73,22 @@ hisat2 options:
 # -2		read 2 (paired-end) input fastq file
 samtools version: "$SAMTOOLS_VERSION"
 samtools sort options for BAM output:
--@ "$THREADS"
+-@ 4
 -m 32G
--T "$TMPDIR"
+-T "$TMPDIR"/samtools/"$SAMPLE_NAME"
 -o output file
-samtools view options for counting number of aligned reads:
--F 256	do not output alignments with not primary flag 0x100
--F 4	do not output unmapped reads 0x4
 "
+# samtools view options for counting number of aligned reads:
+# -F 256	do not output alignments with not primary flag 0x100
+# -F 4	do not output unmapped reads 0x4
 
 # See: https://ccb.jhu.edu/software/hisat2/manual.shtml
 
-EXPECTED_ARGS=11
+EXPECTED_ARGS=16
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo -e "Usage: "$SCRIPT_TITLE" <SEQ_TYPE> <STRAND_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <ALIGNER_INDEX> <BAM_OUT_FILENAME> <OUT_DIR_NAME> <THREADS>
+        echo -e "Usage: "$SCRIPT_TITLE" <SEQ_TYPE> <STRAND_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <ALIGNER_INDEX> <BAM_OUT_FILENAME> <OUT_DIR_NAME> <THREADS> <HISAT2_SIF> <SAMTOOLS_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR> <REFS_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -139,6 +148,15 @@ fi
 		exit 1
 	fi
 
+	# Make temp directory for samtools
+	SAMTOOLS_TMPDIR="$TMPDIR"/samtools/"$SAMPLE_NAME" # v0.3: updated for Proton2
+	#
+	if [ -d "$SAMTOOLS_TMPDIR" ]
+	then
+		rm -R "$SAMTOOLS_TMPDIR" 	# Better to overwrite in case error exit leaves previous version
+	fi
+	mkdir --parents "$SAMTOOLS_TMPDIR"
+
 
 echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:" $SLURMD_NODENAME"]" && echo -e "${NC}"
 
@@ -147,17 +165,18 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 			echo "Running hisat2 in single-end mode for "$SAMPLE_NAME"...
 			"
 
-			# () are used to group the bowtie2 and samtools commands to run in a subshell, allowing all output to be redirected to single file
+			# () are used to group the hisat2 and samtools commands to run in a subshell, allowing all output to be redirected to single file
 			# set -o pipefail sets exit status of pipe/subshell to exit code of last command to exit non-zero (otherwise non-zero from bowtie2 will not be caught)
 			# outer brackets with pipefail ensures that we do not just capture the exit code from tee
 			(set -o pipefail
-				(hisat2 \
+				(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$HISAT2_SIF" hisat2 \
 				-p $THREADS \
 				-x "$HISAT2_INDEX" \
  				--known-splicesite-infile "$HISAT2_SS" \
 				--phred33 \
 				-U $FASTQR1_FILE | \
-				samtools sort -@ 12 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
+				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
+				-@ 4 -m 32G -T "$SAMTOOLS_TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
 				# The "-" at end of samtools view options tells it to use stdin as source file (piped directly from bowtie2)
 				# OLD CMD: samtools view -bhS -o $SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME -
 				# samtools sort can convert directly to bam and removes the need for stage 7_SORT_BAM which uses slow Picard tool
@@ -177,7 +196,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 			# set -o pipefail sets exit status to exit code of pipe/subshell to last command to exit non-zero (otherwise non-zero from hisat2 will not be caught)
 			# outer brackets with pipefail ensures that we do not just capture the exit code from tee
 			(set -o pipefail
-				(hisat2 \
+				(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$HISAT2_SIF" hisat2 \
 				-p $THREADS \
 				-x "$HISAT2_INDEX" \
 				--known-splicesite-infile "$HISAT2_SS" \
@@ -185,24 +204,37 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 				"$LIB_TYPE" \
 				-1 $FASTQR1_FILE \
 				-2 $FASTQR2_FILE | \
-				samtools sort -@ 12 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
+				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
+				-@ 4 -m 32G -T "$SAMTOOLS_TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
 			
 			# check output status
 			if [ $? -ne 0 ]
 			then
 					echo -e "${red}hisat2 or samtools failed in paired-end mode"
+					# remove SAMTOOLS_TMPDIR
+					if [ -d "$SAMTOOLS_TMPDIR" ]
+					then
+						echo "removing temporary directory: "$SAMTOOLS_TMPDIR""
+						rm -R "$SAMTOOLS_TMPDIR"
+					fi
 					exit 1
 			fi
 
 	else
 			echo -e "${red}ERROR - SEQ_TYPE parameter not recognised:${NC} "$SEQ_TYPE"
 			"
+			# remove SAMTOOLS_TMPDIR
+			if [ -d "$SAMTOOLS_TMPDIR" ]
+			then
+				echo "removing temporary directory: "$SAMTOOLS_TMPDIR""
+				rm -R "$SAMTOOLS_TMPDIR"
+			fi
 	fi
 
-samtools flagstat "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".flagstat.txt
-# count only primary alignments, this is the real mapped reads, flagstat is wrong?
-samtools view -F 256 -F 4 "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" | wc -l > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".num_aligned.txt
-# these do not collect extra info / metrics for PE data - see PE_ALIGNMENT_METRICS.sh stage
+# samtools flagstat "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".flagstat.txt
+# # count only primary alignments, this is the real mapped reads, flagstat is wrong?
+# samtools view -F 256 -F 4 "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" | wc -l > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".num_aligned.txt
+# # these do not collect extra info / metrics for PE data - see PE_ALIGNMENT_METRICS.sh stage
 
 echo -e "
 ${green}"$SCRIPT_TITLE" ENDED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:" $SLURMD_NODENAME"]" && echo -e "${NC}
