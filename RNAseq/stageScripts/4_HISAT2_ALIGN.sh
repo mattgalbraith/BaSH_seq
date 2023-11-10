@@ -9,7 +9,7 @@ SCRIPT_VERSION=0.3
 # This script is designed to be run once for each sample (incl. both reads for PE) and is executed by <TTseq>_pipline.sh
 # Reads are aligned using HISAT2 and directly converted to sorted BAM by samtools sort
 # Version 0.2: Removed --no-spliced-alignment and --maxins parameters for general RNASeq use. Added splice-sites param, a file generated when building the index
-# Version 0.3 103123: updating to use FASTQC Singularity/Apptainer
+# Version 0.3 110823: updating to use HISAT2 Singularity/Apptainer
 
 
 
