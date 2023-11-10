@@ -2,15 +2,16 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=5_ADD_RGID.sh
-SCRIPT_VERSION=0.3
+SCRIPT_VERSION=0.4
 # DATE: 07-01-2021
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
 # This script is designed to be run once for each sample (incl. both reads for PE) and is executed by <TTseq>_pipline.sh
 #
 # v0.3: correcting $PICARD and command calls for Eureka
+# Version 0.4 110923: updating to use PICARD Singularity/Apptainer on Proton2
 
-# variables from command line via <TTseq>_pipline.sh:
+# variables from command line via <XXseq>_pipeline.sh:
 SAMPLE_NAME=$1
 PLATFORM=$2
 DATE=$3
@@ -24,10 +25,12 @@ ALIGNMENT_DIRNAME=${10}
 BAM_IN_FILENAME=${11}
 BAM_OUT_FILENAME=${12}
 PICARD_MEM=${13}
+PICARD_SIF=${14}
+THIS_ANALYSIS_DIR=${15}
 #
-PICARD=$(realpath $(which picard)) # work around for conda install not working with java -jar call
-#
-ADD_RGID_VERSION="$(java -Xmx1G -jar $PICARD.jar AddOrReplaceReadGroups --version 2>&1)"
+# PICARD=$(realpath $(which picard)) # work around for conda install not working with java -jar call
+# ADD_RGID_VERSION="$(java -Xmx1G -jar $PICARD.jar AddOrReplaceReadGroups --version 2>&1)"
+ADD_RGID_VERSION=`singularity run "$PICARD_SIF" java -jar /picard.jar AddOrReplaceReadGroups --version 2>&1`
 
 blue="\033[0;36m"
 green="\033[0;32m"
@@ -51,6 +54,8 @@ Arguments for "$SCRIPT_TITLE":
 (11) BAM_IN_FILENAME: "$BAM_IN_FILENAME"
 (12) BAM_OUT_FILENAME: "$BAM_OUT_FILENAME"
 (13) PICARD_MEM: "$PICARD_MEM"
+(14) PICARD_SIF: "$PICARD_SIF"
+(15) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
 Picard AddOrReplaceReadGroups version: "$ADD_RGID_VERSION"
 Picard AddOrReplaceReadGroups options:
 CREATE_INDEX=true
@@ -58,11 +63,11 @@ TMP_DIR="$TMPDIR"
 MAX_RECORDS_IN_RAM=1000000
 "
 
-EXPECTED_ARGS=13
+EXPECTED_ARGS=15
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>
+        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>  <PICARD_SIF> <THIS_ANALYSIS_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -80,7 +85,7 @@ fi
 echo -e "
 ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:" $SLURMD_NODENAME"]${NC}"
 
-	srun java -Xmx"$PICARD_MEM" -jar $PICARD.jar AddOrReplaceReadGroups \
+	srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$PICARD_SIF" java -Xmx"$PICARD_MEM" -jar /picard.jar AddOrReplaceReadGroups \
 		INPUT="$SAMPLE_DIR"/"$ALIGNMENT_DIRNAME"/"$BAM_IN_FILENAME" \
 		OUTPUT="$SAMPLE_DIR"/"$ALIGNMENT_DIRNAME"/"$BAM_OUT_FILENAME" \
 		TMP_DIR=$TMPDIR \

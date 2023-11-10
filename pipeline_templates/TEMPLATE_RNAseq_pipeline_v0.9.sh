@@ -144,6 +144,7 @@ SUBMIT_LOG=$6
         SEQ_CORE=EXAMPLE_BaSH_seq
         SEQ_ID=NA
         EXPERIMENT=stranded_RNAseq
+        PICARD_SIF=/data1/containers/picard3.0.0.sif
         # uncommon options are either defaults or set in 5_
         PICARD_MEM_5=8G      # java memory option
         
@@ -966,16 +967,22 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh
-                #Usage: 5_ADD_RGID.sh <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>
+                #Usage: 5_ADD_RGID.sh <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <PICARD_SIF> <THIS_ANALYSIS_DIR>
                               
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s8 \
+                        --partition=defq \
                         --wrap="\
-                                sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh "$THIS_SAMPLE_NAME" "$PLATFORM" "$DATE" "$PI" "$LIBRARY" "$SEQ_CORE" "$SEQ_ID" "$EXPERIMENT" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.no-rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.bam "$PICARD_MEM_5"\
+                                sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh \
+                                "$THIS_SAMPLE_NAME" \
+                                "$PLATFORM" "$DATE" "$PI" "$LIBRARY" "$SEQ_CORE" "$SEQ_ID" "$EXPERIMENT" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.no-rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.bam \
+                                "$PICARD_MEM_5" \
+                                "$PICARD_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status
@@ -1032,7 +1039,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s8 \
+                        --partition=defq \
                         --wrap="\
                                 sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$MIN_MAPQ"\
                                 "
@@ -1091,7 +1098,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s16 \
+                        --partition=defq \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/7_SORT_BAM.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$PICARD_MEM_7"\
                                 "
@@ -1150,7 +1157,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s16 \
+                        --partition=defq \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/8_MARK_DUPLICATES.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam "$PICARD_MEM_8" "$DUPLICATES"\
                                 "
@@ -1224,7 +1231,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s16 \
+                        --partition=defq \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/"$ALIGNMENT_METRICS_SCRIPT" "$THIS_ANALYSIS_DIR" "$QC_DIR_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$PICARD_MEM_9" "$REF_FILE"\
                                 "
@@ -1283,7 +1290,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s30 \
+                        --partition=defq \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh "$SEQ_TYPE" "$THIS_ANALYSIS_DIR" "$QC_DIR_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$REFSEQ_BED" "$HOUSEKEEPING_BED"\
                                 "
@@ -1342,7 +1349,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --job-name="$JOB_NAME" \
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
-                        --partition=c2s30 \
+                        --partition=defq \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/11_HTSEQ_COUNT.sh "$THIS_ANALYSIS_DIR" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$STRAND_TYPE" "$SPIKE_IN" "$ORDER" "$GTF" "$DM_GTF" "$ERCC_GTF" "$FEATURETYPE" "$IDATTR" "$HT_MINAQUAL" "$MODE" "$COUNTS_DIRNAME" "$SEQ_TYPE"\
                                 "
