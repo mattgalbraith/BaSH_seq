@@ -2,24 +2,30 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=9_PE_ALIGNMENT_METRICS.sh
-SCRIPT_VERSION=0.3
+SCRIPT_VERSION=0.4
 # DATE: 06-21-2018
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
-# This script is designed to be run once for each sample and is executed by <TTseq>_pipeline.sh
+# This script is designed to be run once for each sample and is executed by <XXseq>_pipeline.sh
 # REF_FILE in .fasta format must be accompanied by .dict and .fai files created by CreateSequenceDictionary and samtools faidx, respectively; All 3 can be gzipped.
+#
+# Version 0.4 110923: updating to use PICARD Singularity/Apptainer on Proton2
 
 
-# variables from command line via <TTseq>_pipline.sh:
+# variables from command line via <XXseq>_pipline.sh:
 ANALYSIS_DIR=${1}
 QC_DIR=${2}
 SAMPLE_DIR=${3}
 SAMPLE_NAME=${4}
 PICARD_MEM=${5}
 REF_FILE=${6} 					# required for some Picard tools
+PICARD_SIF=${7}
+SAMTOOLS_SIF=${8}
 # other variables:
-SAMTOOLS_VERSION="$(samtools --version 2>&1)"
-CASM_VERSION="$(java -Xmx64G -jar $PICARD/picard CollectAlignmentSummaryMetrics --version 2>&1)"
+# SAMTOOLS_VERSION="$(samtools --version 2>&1)"
+SAMTOOLS_VERSION=`singularity run "$SAMTOOLS_SIF" samtools --version | head -n1`
+# CASM_VERSION="$(java -Xmx64G -jar $PICARD/picard CollectAlignmentSummaryMetrics --version 2>&1)"
+CASM_VERSION=`singularity run "$PICARD_SIF" java -jar /picard.jar CollectAlignmentSummaryMetrics --version 2>&1`
 
 
 blue="\033[0;36m"
@@ -37,6 +43,8 @@ Arguments for "$SCRIPT_TITLE":
 (4) SAMPLE_NAME: "$SAMPLE_NAME"
 (5) PICARD_MEM: "$PICARD_MEM"
 (6) REF_FILE: "$REF_FILE"
+(7) PICARD_SIF: "$PICARD_SIF"
+(8) SAMTOOLS_SIF: "$SAMTOOLS_SIF"
 Samtools version: "$SAMTOOLS_VERSION"
 samtools view options:
 various filters
@@ -46,11 +54,11 @@ REFERENCE_SEQUENCE="$REF_FILE"
 ASSUME_SORTED=true
 "
 
-EXPECTED_ARGS=6
+EXPECTED_ARGS=8
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo -e "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE>
+    echo -e "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE> <PICARD_SIF> <SAMTOOLS_SIF>
     ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
     "$@"
     "
@@ -124,31 +132,31 @@ echo "Collecting alignment stats for "$SAMPLE_NAME"...
 echo "
 Unfiltered BAM: "$(basename "$BAMFILE1")"" >> $OUTPUT_FILE
 echo -ne "\
-Total_reads: "$(samtools view "$BAMFILE1" | wc -l)"
-R1: "$(samtools view -f 64 "$BAMFILE1" | wc -l)"
-R2: "$(samtools view -f 128 "$BAMFILE1" | wc -l)"
-Unaligned: "$(samtools view -f 5 "$BAMFILE1" | wc -l)"
-Aligned: "$(samtools view -f 1 -F 260 "$BAMFILE1" | wc -l)"
-Duplicates: "$(samtools view -f 1025 -F 260 "$BAMFILE1" | wc -l)"
-Concordant_pairs: "$(samtools view -f 1 -F 260 "$BAMFILE1" | grep YT:Z:CP | wc -l)"
-Discordant_pairs: "$(samtools view -f 1 -F 260 "$BAMFILE1" | grep YT:Z:DP | wc -l)"
-alignedUnpairedMate: "$(samtools view -f 1 -F 260 "$BAMFILE1" | grep YT:Z:UP | wc -l)"
+Total_reads: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view "$BAMFILE1" | wc -l)"
+R1: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 64 "$BAMFILE1" | wc -l)"
+R2: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 128 "$BAMFILE1" | wc -l)"
+Unaligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 5 "$BAMFILE1" | wc -l)"
+Aligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE1" | wc -l)"
+Duplicates: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1025 -F 260 "$BAMFILE1" | wc -l)"
+Concordant_pairs: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE1" | grep YT:Z:CP | wc -l)"
+Discordant_pairs: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE1" | grep YT:Z:DP | wc -l)"
+alignedUnpairedMate: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE1" | grep YT:Z:UP | wc -l)"
 " >> $OUTPUT_FILE
 # ADD MORE BOWTIE2 TAGS?
 
 echo "
 Filtered dups marked BAM: "$(basename "$BAMFILE2")"" >> $OUTPUT_FILE
 echo -ne "\
-Total_reads: "$(samtools view "$BAMFILE2" | wc -l)"
-R1: "$(samtools view -f 64 "$BAMFILE2" | wc -l)"
-R2: "$(samtools view -f 128 "$BAMFILE2" | wc -l)"
-Unaligned: "$(samtools view -f 5 "$BAMFILE2" | wc -l)"
-Aligned: "$(samtools view -f 1 -F 260 "$BAMFILE2" | wc -l)"
-Duplicates: "$(samtools view -f 1025 -F 260 "$BAMFILE2" | wc -l)"
-Concordant_pairs: "$(samtools view -f 1 -F 260 "$BAMFILE2" | grep YT:Z:CP | wc -l)"
-Discordant_pairs: "$(samtools view -f 1 -F 260 "$BAMFILE2" | grep YT:Z:DP | wc -l)"
-alignedUnpairedMate: "$(samtools view -f 1 -F 260 "$BAMFILE2" | grep YT:Z:UP | wc -l)"
-Non-dup_concordant_pairs: "$(samtools view -f 1 -F 1284 "$BAMFILE2" | grep YT:Z:UP | wc -l)"
+Total_reads: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view "$BAMFILE2" | wc -l)"
+R1: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 64 "$BAMFILE2" | wc -l)"
+R2: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 128 "$BAMFILE2" | wc -l)"
+Unaligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 5 "$BAMFILE2" | wc -l)"
+Aligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE2" | wc -l)"
+Duplicates: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1025 -F 260 "$BAMFILE2" | wc -l)"
+Concordant_pairs: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE2" | grep YT:Z:CP | wc -l)"
+Discordant_pairs: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE2" | grep YT:Z:DP | wc -l)"
+alignedUnpairedMate: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE2" | grep YT:Z:UP | wc -l)"
+Non-dup_concordant_pairs: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 1284 "$BAMFILE2" | grep YT:Z:UP | wc -l)"
 " >> $OUTPUT_FILE
 # ADD MORE BOWTIE2 TAGS?
 
@@ -174,7 +182,7 @@ TMP_DP_TLEN_FILE2="$TMPDIR"/TLEN_temp/"$SAMPLE_NAME"/DP_"$(basename "$BAMFILE2")
 
 mkdir --parents "$TMPDIR"/TLEN_temp/"$SAMPLE_NAME"
 
-srun samtools view -f 65 -F 4 "$BAMFILE1" | grep YT:Z:CP | cut -f9 | sed -e 's/-//g' > "$TMP_CP_TLEN_FILE1"
+singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 65 -F 4 "$BAMFILE1" | grep YT:Z:CP | cut -f9 | sed -e 's/-//g' > "$TMP_CP_TLEN_FILE1"
 cat "$TMP_CP_TLEN_FILE1" | R --vanilla --slave -e 'x<-scan(file="stdin", quiet=T);x.freq<-table(x);data.frame(x.freq)' | cut -d " " -f2- | tail -n +2 > "$TMPDIR"/TLEN_temp/CP_"$(basename "$BAMFILE1")"_freqTable.txt
 echo "
 Template length (insert size) for "$(basename "$BAMFILE1")" concordant pairs:" > "$INSERTS_FILE"
@@ -188,7 +196,7 @@ then
 	exit 1
 fi
 
-srun samtools view -f 65 -F 4 "$BAMFILE1" | grep YT:Z:DP | cut -f9 | sed -e 's/-//g' > "$TMP_DP_TLEN_FILE1"
+singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 65 -F 4 "$BAMFILE1" | grep YT:Z:DP | cut -f9 | sed -e 's/-//g' > "$TMP_DP_TLEN_FILE1"
 cat "$TMP_DP_TLEN_FILE1" | R --vanilla --slave -e 'x<-scan(file="stdin", quiet=T);x.freq<-table(x);data.frame(x.freq)' | cut -d " " -f2- | tail -n +2 > "$TMPDIR"/TLEN_temp/DP_"$(basename "$BAMFILE1")"_freqTable.txt
 echo "
 Template length (insert size) for "$(basename "$BAMFILE1")" discordant pairs:" >> "$INSERTS_FILE"
@@ -202,7 +210,7 @@ then
 	exit 1
 fi
 
-srun samtools view -f 65 -F 4 "$BAMFILE2" | grep YT:Z:CP | cut -f9 | sed -e 's/-//g' > "$TMP_CP_TLEN_FILE2"
+singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 65 -F 4 "$BAMFILE2" | grep YT:Z:CP | cut -f9 | sed -e 's/-//g' > "$TMP_CP_TLEN_FILE2"
 cat "$TMP_CP_TLEN_FILE2" | R --vanilla --slave -e 'x<-scan(file="stdin", quiet=T);x.freq<-table(x);data.frame(x.freq)' | cut -d " " -f2- | tail -n +2 > "$TMPDIR"/TLEN_temp/CP_"$(basename "$BAMFILE2")"_freqTable.txt
 echo "
 Template length (insert size) for "$(basename "$BAMFILE2")" concordant pairs:" >> "$INSERTS_FILE"
@@ -216,7 +224,7 @@ then
 	exit 1
 fi
 
-srun samtools view -f 65 -F 4 "$BAMFILE2" | grep YT:Z:DP | cut -f9 | sed -e 's/-//g' > "$TMP_DP_TLEN_FILE2"
+singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 65 -F 4 "$BAMFILE2" | grep YT:Z:DP | cut -f9 | sed -e 's/-//g' > "$TMP_DP_TLEN_FILE2"
 cat "$TMP_DP_TLEN_FILE2" | R --vanilla --slave -e 'x<-scan(file="stdin", quiet=T);x.freq<-table(x);data.frame(x.freq)' | cut -d " " -f2- | tail -n +2 > "$TMPDIR"/TLEN_temp/DP_"$(basename "$BAMFILE2")"_freqTable.txt
 echo "
 Template length (insert size) for "$(basename "$BAMFILE2")" discordant pairs:" >> "$INSERTS_FILE"

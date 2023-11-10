@@ -1238,7 +1238,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 fi
 
                 # sh "$PIPELINE_SCRIPTS_DIR"/9_PE_ALIGNMENT_METRICS.sh
-                # Usage: 9_PE_ALIGNMENT_METRICS.sh <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE>
+                # Usage: 9_PE_ALIGNMENT_METRICS.sh <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE> <PICARD_SIF> <SAMTOOLS_SIF>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1247,7 +1247,15 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/"$ALIGNMENT_METRICS_SCRIPT" "$THIS_ANALYSIS_DIR" "$QC_DIR_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$PICARD_MEM_9" "$REF_FILE"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/"$ALIGNMENT_METRICS_SCRIPT" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$QC_DIR_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$THIS_SAMPLE_NAME" \
+                                "$PICARD_MEM_9" \
+                                "$REF_FILE" \
+                                "$PICARD_SIF" \
+                                "$SAMTOOLS_SIF"\
                                 "
 
                 # Catch output status
