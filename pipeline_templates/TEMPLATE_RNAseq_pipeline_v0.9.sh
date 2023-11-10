@@ -150,6 +150,7 @@ SUBMIT_LOG=$6
         
 # 6 FILTER
         MIN_MAPQ=10
+        SAMTOOLS_SIF=/data1/containers/samtools1.16.1.sif
 # 7 SORT
         PICARD_MEM_7=16G     # java memory option
                                                                         # need to check variables in script and move here
@@ -1032,7 +1033,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh
-                #Usage: 6_MAPQ_FILTER.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <MIN_MAPQ>
+                #Usage: 6_MAPQ_FILTER.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <MIN_MAPQ> <SAMTOOLS_SIF> <THIS_ANALYSIS_DIR>
                                 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1041,7 +1042,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
                         --wrap="\
-                                sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$MIN_MAPQ"\
+                                sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam \
+                                "$MIN_MAPQ" \
+                                "$SAMTOOLS_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status
