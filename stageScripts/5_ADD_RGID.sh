@@ -67,7 +67,7 @@ EXPECTED_ARGS=15
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>  <PICARD_SIF> <THIS_ANALYSIS_DIR>
+        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <PICARD_SIF> <THIS_ANALYSIS_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "

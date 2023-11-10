@@ -1096,7 +1096,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/7_SORT_BAM.sh
-                #Usage: 7_SORT_BAM.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>
+                #Usage: 7_SORT_BAM.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <PICARD_SIF> <THIS_ANALYSIS_DIR>
                 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1105,7 +1105,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/7_SORT_BAM.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$PICARD_MEM_7"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/7_SORT_BAM.sh \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam \
+                                "$PICARD_MEM_7" \
+                                "$PICARD_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status

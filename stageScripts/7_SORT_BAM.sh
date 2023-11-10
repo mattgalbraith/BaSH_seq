@@ -16,11 +16,14 @@ ALIGNMENT_DIRNAME=$2
 BAM_IN_FILENAME=$3
 BAM_OUT_FILENAME=$4
 PICARD_MEM=$5
+PICARD_SIF=${6}
+THIS_ANALYSIS_DIR=${7}
 #
-PICARD=$(realpath $(which picard)) # work around for conda install not working with java -jar call
+# PICARD=$(realpath $(which picard)) # work around for conda install not working with java -jar call
 #
 # Other variables:
-SORTSAM_VERSION="$(java -Xmx1G -jar $PICARD.jar SortSam --version 2>&1)"
+# SORTSAM_VERSION="$(java -Xmx1G -jar $PICARD.jar SortSam --version 2>&1)"
+SORTSAM_VERSION=`singularity run "$PICARD_SIF" java -jar /picard.jar SortSam --version 2>&1`
 
 blue="\033[0;36m"
 green="\033[0;32m"
@@ -36,6 +39,8 @@ Arguments for SortBam.sh:
 (3) BAM_IN_FILENAME: "$BAM_IN_FILENAME"
 (4) BAM_OUT_FILENAME: "$BAM_OUT_FILENAME"
 (5) PICARD_MEM: "$PICARD_MEM"
+(6) PICARD_SIF: "$PICARD_SIF"
+(7) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
 PICARD SortSam options:
 SORT_ORDER=coordinate
 CREATE_INDEX=true
@@ -48,11 +53,11 @@ CREATE_INDEX=true
 MAX_RECORDS_IN_RAM=1000000
 "
 
-EXPECTED_ARGS=5
+EXPECTED_ARGS=7
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>
+        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <PICARD_SIF> <THIS_ANALYSIS_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -72,7 +77,7 @@ BAM_OUT_FILE=$SAMPLE_DIR/$ALIGNMENT_DIRNAME/$BAM_OUT_FILENAME
 
 echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:" $SLURMD_NODENAME"]" && echo -e "${NC}
 "
-	srun java -XX:ParallelGCThreads=5 -Xmx"$PICARD_MEM" -jar $PICARD.jar SortSam \
+	srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$PICARD_SIF" java -XX:ParallelGCThreads=5 -Xmx"$PICARD_MEM" -jar /picard.jar SortSam \
 		INPUT="$BAM_IN_FILE" \
 		OUTPUT="$BAM_OUT_FILE" \
 		SORT_ORDER=coordinate \
