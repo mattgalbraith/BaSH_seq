@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=4_HISAT2-DNA.sh
@@ -35,7 +35,8 @@ REFS_DIR=${16}
 ALIGNMENT_SUMMARY_FILENAME="hisat_alignment_summary.txt"
 # HISAT2_VERSION="$(hisat2 --version | head -n1 | awk '{print $3}')"
 HISAT2_VERSION=`singularity run "$HISAT2_SIF" bash -c 'hisat2 --version | head -n1'`
-SAMTOOLS_VERSION="$(samtools --version 2>&1)" # NEED TO ADD SAMTOOLS TO CONTAINER
+# SAMTOOLS_VERSION="$(samtools --version 2>&1)" # NEED TO ADD SAMTOOLS TO CONTAINER
+SAMTOOLS_VERSION=`singularity run "$SAMTOOLS_SIF" samtools --version | head -n1`
 
 blue="\033[0;36m"
 green="\033[0;32m"
