@@ -2,13 +2,14 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=7_SORT_BAM.sh
-SCRIPT_VERSION=0.3
+SCRIPT_VERSION=0.4
 # DATE: 07-01-2021
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
 # This script is designed to be run once for each sample (incl. both reads for PE) and is executed by <TTseq>_pipline.sh 
 #
 # v0.3: correcting $PICARD and command calls for Eureka
+# Version 0.4 110923: updating to use PICARD Singularity/Apptainer on Proton2
 
 # variables from command line via <TTseq>_pipline.sh:
 SAMPLE_DIR=$1
