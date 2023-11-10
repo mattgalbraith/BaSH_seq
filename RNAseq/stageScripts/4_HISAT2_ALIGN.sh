@@ -34,7 +34,7 @@ REFS_DIR=${16}
 # other variables
 ALIGNMENT_SUMMARY_FILENAME="hisat_alignment_summary.txt"
 # HISAT2_VERSION="$(hisat2 --version | head -n1 | awk '{print $3}')"
-HISAT2_VERSION=`singularity run /data1/containers/hisat2_2.2.1.sif bash -c 'hisat2 --version | head -n1'`
+HISAT2_VERSION=`singularity run "$HISAT2_SIF" bash -c 'hisat2 --version | head -n1'`
 SAMTOOLS_VERSION="$(samtools --version 2>&1)" # NEED TO ADD SAMTOOLS TO CONTAINER
 
 blue="\033[0;36m"
