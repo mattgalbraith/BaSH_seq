@@ -160,15 +160,15 @@ SUBMIT_LOG=$6
                                                                         # need to check variables in script and move here
 # 9 ALIGNMENT METRICS
         PICARD_MEM_9=64
-        REF_FILE="$HOME"/references/Picard/ucsc.hg19.fasta.gz # not currently used
+        # REF_FILE="$HOME"/references/Picard/ucsc.hg19.fasta.gz # not currently used
 
 # 10 RSEQC
-        # REFSEQ_BED=$SHARED/references/Homo_sapiens/UCSC/hg19/tool_resources/rseqc/hg19_RefSeq.bed # OLD
-        # REFSEQ_BED="$HOME"/references/rseqc/hg38_Gencode_V33.bed # HUMAN
-        REFSEQ_BED="$HOME"/references/rseqc/mm10_RefSeq.bed # MOUSE
-        # HOUSEKEEPING_BED=$SHARED/references/Homo_sapiens/UCSC/hg19/tool_resources/rseqc/hg19.HouseKeepingGenes.bed # OLD
-        HOUSEKEEPING_BED=$HOME/references/rseqc/hg38.HouseKeepingGenes.bed # HUMAN
-        # HOUSEKEEPING_BED=$HOME/references/rseqc/mm10.HouseKeepingGenes.bed # MOUSE
+        REFSEQ_BED=/data1/references/rseqc/hg38_Gencode_V33.bed # HUMAN
+        # REFSEQ_BED=/data1/references/rseqc/mm10_RefSeq.bed # MOUSE
+        HOUSEKEEPING_BED=/data1/references/rseqc/hg38.HouseKeepingGenes.bed # HUMAN
+        # HOUSEKEEPING_BED=/data1/references/rseqc/mm10.HouseKeepingGenes.bed # MOUSE
+        RSEQC_SIF=/data1/containers/rseqc5.0.1.sif
+        RSEQC_REFS=/data1/references/rseqc
 
 
 # 11 HTSeq COUNT
@@ -294,27 +294,6 @@ function checkOutputStatus {
 
 echo -e "----------\n${blue}Starting "$PIPELINE_TITLE" v"$PIPELINE_VERSION" stage(s) "$START_AT_STAGE" to "$END_AT_STAGE" for "$THIS_SAMPLE_NAME"${NC}\n----------"
 
-########################################################
-# New for HDC Eureka with data on Google Cloud Storage #
-#### COPY RAW DATA AND UPDATE VARIABLE(S) ##############
-# GCS_BUCKET_DIR=gs://hdchpcprodgalbraith1-staging/Liposarcoma2
-# THIS_ANALYSIS_DIR=analysis_06_29_2021_TEST
-# THIS_SAMPLE_NAME=246_DMSO_1
-# pull from sample locations.txt: gsutil cat "$GCS_BUCKET_DIR"/"$THIS_ANALYSIS_DIR"/sample_locations.txt | grep -w read1 | grep -w $THIS_SAMPLE_NAME | cut -f2,2
-# FASTQR1_FILE_ORIG=$(gsutil cat "$GCS_BUCKET_DIR"/$(basename "$THIS_ANALYSIS_DIR")/sample_locations.txt | grep -w read1 | grep -w $THIS_SAMPLE_NAME | cut -f2,2)
-# FASTQR1_FILE easier to define here???? especially if going to be in /tmp
-# pull from sample locations.txt: gsutil cat "$GCS_BUCKET_DIR"/"$THIS_ANALYSIS_DIR"/sample_locations.txt | grep -w read2 | grep -w $THIS_SAMPLE_NAME | cut -f2,2
-# FASTQR2_FILE_ORIG=$(gsutil cat "$GCS_BUCKET_DIR"/$(basename "$THIS_ANALYSIS_DIR")/sample_locations.txt | grep -w read2 | grep -w $THIS_SAMPLE_NAME | cut -f2,2)
-# FASTQR2_FILE easier to define here???? especially if going to be in /tmp
-# the copy portions may be better at start of each stage so that only the required data is copied (but multiple steps require FASTQ; although each is probably diff instance so will have to be done per stage)
-# Could also add switch based on which stages to run
-# NOPE: if used, copies to /tmp will have to be done in stage scripts as /tmp is unique to each node session
-# thus will have to pass additional params to stage scripts if pursuing this route.
-# gsutil cp "$FASTQR1_FILE_ORIG" /tmp/$(basename "$THIS_ANALYSIS_DIR")/Sample_"$THIS_SAMPLE_NAME"/Raw/$(basename "$FASTQR1_FILE_ORIG") # rename??? maybe not needed
-# if [ $SEQ_TYPE = "PE" ]
-# then
-#     gsutil cp "$FASTQR2_FILE_ORIG" /tmp/$(basename "$THIS_ANALYSIS_DIR")/Sample_"$THIS_SAMPLE_NAME"/Raw/$(basename "$FASTQR2_FILE_ORIG") # rename??? maybe not needed
-# fi
 
 
 # Check for Sample FASTQ file(s) and set up FASTQR1 and/or FASTQR2 variables for PE/SE data
@@ -344,8 +323,6 @@ if [ $START_AT_STAGE -lt 5 ] # Adding this to skip looking for FASTQ files after
             echo "Running "$PIPELINE_TYPE" pipeline in paired-end (PE) mode
             "
             FASTQR2_FILE="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Raw/"$THIS_SAMPLE_NAME"_R2.fastq.gz
-            # for Eureka use basename of FASTQR1_FILE_ORIG instead of renaming; MAY NEED TO MOVE OR MAKE FUNCTION FOR ONLY STAGES THAT CARE ABOUT FASTQ
-            # FASTQR2_FILE=/tmp/$(basename "$THIS_ANALYSIS_DIR")/Sample_"$THIS_SAMPLE_NAME"/Raw/$(basename "$FASTQR2_FILE_ORIG")
 
             if [ ! -f "$FASTQR2_FILE" ]
             then
@@ -368,26 +345,6 @@ then
         mkdir "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/std_out_err/
 fi
 
-### These directory creation steps should be moved to appropriate stages to avoid making them before required
-## make a ProjectCounts directory inside the analysis directory
-## uncomment for pipelines requiring counts
-# if [ ! -d "$THIS_ANALYSIS_DIR"/ProjectCounts/ ]
-# then
-#         mkdir "$THIS_ANALYSIS_DIR"/ProjectCounts/
-# fi
-
-## make a DifferentialExpression directory inside the analysis directory
-## uncomment for pipelines requiring differential expression analysis
-# if [ ! -d "$THIS_ANALYSIS_DIR"/DifferentialExpression/ ]
-# then
-#         mkdir "$THIS_ANALYSIS_DIR"/DifferentialExpression/
-# fi
-
-## copy the samples.txt file inside the scripts directory
-## uncomment for pipelines requiring counts
-#cp -r "$THIS_ANALYSIS_DIR"/samples.txt "$THIS_ANALYSIS_DIR"/scripts/
-# make countsFilesList.txt inside the scripts directory because we need this for making the counts files
-#for i in `cat samples.txt`; do echo -e ""$i"\t"$THIS_ANALYSIS_DIR"/Sample_"$i"/Counts/"$i".0mismatchHighQual.counts.tab" > "$THIS_ANALYSIS_DIR"/scripts/countsFilesList.txt
 
 ##### Capture snapshot of stage scripts to be used for this pipeline run #####
 # This will ensure that old versions are preserved in case of major changes
@@ -1305,7 +1262,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
                 
                 # sh 10_RSEQC.sh
-                # Usage: 10_RSEQC.sh <SEQ_TYPE> <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <REFSEQ_BED> <HOUSEKEEPING_BED>
+                # Usage: 10_RSEQC.sh <SEQ_TYPE> <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <REFSEQ_BED> <HOUSEKEEPING_BED> <RSEQC_SIF> <RSEQC_REFS>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1314,7 +1271,18 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh "$SEQ_TYPE" "$THIS_ANALYSIS_DIR" "$QC_DIR_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$REFSEQ_BED" "$HOUSEKEEPING_BED"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh \
+                                "$SEQ_TYPE" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$QC_DIR_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                Alignments \
+                                "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam \
+                                "$THIS_SAMPLE_NAME" \
+                                "$REFSEQ_BED" \
+                                "$HOUSEKEEPING_BED" \
+                                "$RSEQC_SIF" \
+                                "$RSEQC_REFS"\
                                 "
 
                 # Catch output status
