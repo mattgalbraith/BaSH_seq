@@ -172,19 +172,19 @@ SUBMIT_LOG=$6
 
 
 # 11 HTSeq COUNT
-        GTF="$HOME"/references/GRCh38/Gencode/annotation/gencode.v33.basic.annotation.gtf # HUMAN
-        # GTF="$HOME"/references/GRCm38/Gencode/annotation/gencode.vM24.basic.annotation.gtf # MOUSE
+        GTF=/data1/references/GRCh38/Gencode/annotation/gencode.v33.basic.annotation.gtf # HUMAN
+        # GTF=/data1/references/GRCm38/Gencode/annotation/gencode.vM24.basic.annotation.gtf # MOUSE
         #
-        DM_GTF="$HOME"/references/dm6/Drosophila_melanogaster/UCSC/dm6/Annotation/Genes/genes.gtf           # from igenomes
-        ERCC_GTF="$HOME"/references/ERCC/ERCC92/ERCC92.gtf                                                  # from https://assets.thermofisher.com/TFS-Assets/LSG/manuals/ERCC92.zip
-        # ^ use additional gtfs when using Drosophila and/or ERCC spike-ins
-        # STD HUMAN: $SHARED/references/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf      # from igenomes
+        DM_GTF=/data1/references/dm6/Drosophila_melanogaster/UCSC/dm6/Annotation/Genes/genes.gtf           # from igenomes
+        ERCC_GTF=/data1/references/ERCC/ERCC92/ERCC92.gtf                                                  # from https://assets.thermofisher.com/TFS-Assets/LSG/manuals/ERCC92.zip
+        # ^ additional gtfs only used with Drosophila and/or ERCC spike-ins (do not comment out or args for stage get shifted)
         FEATURETYPE=exon
         IDATTR=gene_id # extracts ensemblID, which are unique
         HT_MINAQUAL=10
         MODE=intersection-nonempty
         ORDER=pos       # For paired-end data: <name> or <pos>; Default is name
         # BUFFER=       # --max-reads-in-buffer=<number>; when paired sorted by position; default is 30000000       # NOT IMPLEMENTED YET
+        HTSEQ_SIF=/data1/containers/htseq2.0.2.sif
 
 # NOT IN USE FOR RNAseq:
 # # 12 HOMER MAKE TAG DIR
@@ -1332,7 +1332,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 # sh 11_HTSEQ_COUNT.sh
-                # Usage: 11_HTSEQ_COUNT.sh <ANALYSIS_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <STRAND_TYPE> <SPIKE_IN> <SORT_ORDER> <GTF> <DM_GTF> <ERCC_GTF> <FEATURETYPE> <IDATTR> <MINAQUAL> <MODE> <COUNTS_DIRNAME> <SEQ_TYPE>
+                # Usage: 11_HTSEQ_COUNT.sh <ANALYSIS_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <STRAND_TYPE> <SPIKE_IN> <SORT_ORDER> <GTF> <DM_GTF> <ERCC_GTF> <FEATURETYPE> <IDATTR> <MINAQUAL> <MODE> <COUNTS_DIRNAME> <SEQ_TYPE> <HTSEQ_SIF> <REFS_DIR>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1341,7 +1341,24 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/11_HTSEQ_COUNT.sh "$THIS_ANALYSIS_DIR" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$STRAND_TYPE" "$SPIKE_IN" "$ORDER" "$GTF" "$DM_GTF" "$ERCC_GTF" "$FEATURETYPE" "$IDATTR" "$HT_MINAQUAL" "$MODE" "$COUNTS_DIRNAME" "$SEQ_TYPE"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/11_HTSEQ_COUNT.sh \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$THIS_SAMPLE_NAME" \
+                                "$STRAND_TYPE" \
+                                "$SPIKE_IN" \
+                                "$ORDER" \
+                                "$GTF" \
+                                "$DM_GTF" \
+                                "$ERCC_GTF" \
+                                "$FEATURETYPE" \
+                                "$IDATTR" \
+                                "$HT_MINAQUAL" \
+                                "$MODE" \
+                                "$COUNTS_DIRNAME" \
+                                "$SEQ_TYPE" \
+                                "$HTSEQ_SIF" \
+                                "$REFS_DIR"\
                                 "
 
                 # Catch output status

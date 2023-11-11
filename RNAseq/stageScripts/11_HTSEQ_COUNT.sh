@@ -1,14 +1,9 @@
 #!/bin/bash
-# consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
+# consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use an unset variable)
 
-# # Temporary export of environment variables to override R version until Bioconductor tools can be installed for R 3.6.1
-# export RVERSION="3.3.3"
-# export PATH=/gpfs/jespinosa/shared/Tools/R/$RVERSION/lib64/R/bin:$PATH
-# export R_LIBS_SITE=$SHARED/Tools/lib/R_$RVERSION/
-# export R_LIBS_USER=$SHARED/Tools/lib/R_$RVERSION/
 
 SCRIPT_TITLE=11_HTSEQ_COUNT.sh
-SCRIPT_VERSION=0.8
+SCRIPT_VERSION=0.9
 # DATE: 07-02-2021
 # AUTHOR: Matthew Galbraith | Kohl Kinning
 # SUMMARY: 
@@ -19,9 +14,10 @@ SCRIPT_VERSION=0.8
 # Version 0.6: lowering -m to 6G and changing over to new RPKM/TPM script
 # Version 0.7: ?
 # Version 0.8: modifications for Eureka: $TMPDIR -> /tmp; also had to add index (due to newer version of HTSeq-count?)
+# Version 0.9 111023: updating to use HTSEQ Singularity/Apptainer on Proton2
 
 # variables from command line via <RNAseq>_pipeline.sh:
-ANALYSIS_DIR=${1}
+THIS_ANALYSIS_DIR=${1}
 SAMPLE_DIR=${2}
 SAMPLE_NAME=${3}
 STRAND_TYPE=${4}
@@ -36,10 +32,13 @@ MINAQUAL=${12}
 MODE=${13}
 COUNTS_DIRNAME=${14}
 SEQ_TYPE=${15}
+HTSEQ_SIF=${16}
+REFS_DIR=${17}
 # other variables
 BAMINFILE="$SAMPLE_DIR"/Alignments/"$SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam
-HTSEQ_COUNT_VERSION="$(htseq-count -h | grep -e "framework")"
-SAMTOOLS_VERSION="$(samtools --version 2>&1)"
+# HTSEQ_COUNT_VERSION="$(htseq-count -h | grep -e "framework")"
+HTSEQ_COUNT_VERSION=`singularity run "$HTSEQ_SIF" htseq-count --version`
+# SAMTOOLS_VERSION="$(samtools --version 2>&1)"
 
 blue="\033[0;36m"
 green="\033[0;32m"
@@ -50,7 +49,7 @@ echo "
 Script name: "$SCRIPT_TITLE"
 Script version: "$SCRIPT_VERSION"
 Arguments for "$SCRIPT_TITLE":
-(1) ANALYSIS_DIR: "$ANALYSIS_DIR"
+(1) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
 (2) SAMPLE_DIR: "$SAMPLE_DIR"
 (3) SAMPLE_NAME: "$SAMPLE_NAME"
 (4) STRAND_TYPE: "$STRAND_TYPE"
@@ -65,6 +64,8 @@ Arguments for "$SCRIPT_TITLE":
 (13) MODE: "$MODE"
 (14) COUNTS_DIRNAME: "$COUNTS_DIRNAME"
 (15) SEQ TYPE: "$SEQ_TYPE"
+(16) HTSEQ_SIF: "$HTSEQ_SIF"
+(17) REFS_DIR: "$REFS_DIR"
 htseq-count version: "$HTSEQ_COUNT_VERSION"
 htseq-count options:
 --format=bam
@@ -78,11 +79,11 @@ samtools version: "$SAMTOOLS_VERSION"
 BAMINFILE: "$BAMINFILE"
 "
 
-EXPECTED_ARGS=15
+EXPECTED_ARGS=17
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo -e "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <STRAND_TYPE> <SPIKE_IN> <SORT_ORDER> <GTF> <DM_GTF> <ERCC_GTF> <FEATURETYPE> <IDATTR> <MINAQUAL> <MODE> <COUNTS_DIRNAME> <SEQ_TYPE>
+        echo -e "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <STRAND_TYPE> <SPIKE_IN> <SORT_ORDER> <GTF> <DM_GTF> <ERCC_GTF> <FEATURETYPE> <IDATTR> <MINAQUAL> <MODE> <COUNTS_DIRNAME> <SEQ_TYPE> <HTSEQ_SIF> <REFS_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -180,7 +181,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 
 	echo "Running htseq-count for main GTF..."
 
-	htseq-count \
+	singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$HTSEQ_SIF" htseq-count \
 			--format=bam \
 			--order="$SORT_ORDER" \
 			--stranded="$STRANDED" \
@@ -212,7 +213,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 			# Remove tmp file
 			rm -rf ${OUTPUT_FILE%.txt}.tmp
 
-		# TEMPORARILY INACTIVATED PENDING R SETUP ON EUREKA + UPDATING OF R SCRIPT
+		# INACTIVATED PENDING R SETUP ON EUREKA + UPDATING OF R SCRIPT - currently run manually within analysis dir on local
 		# # generate TPMs
 		# echo "Generating RPKMs and TPMs from counts file: "$OUTPUT_FILE""
 		# srun Rscript $SHARED/Kohl/PipeLinesScripts/RNAseq/AnnotateCountsToRPKMAndTPM.R "$GTF" "$OUTPUT_FILE"  # NEED TO CHECK
@@ -229,7 +230,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 		then
 			echo "Running htseq-count for Drosophila dm6 GTF..."
 
-			htseq-count \
+		singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$HTSEQ_SIF" htseq-count \
 			--format=bam \
 			--order="$SORT_ORDER" \
 			--stranded="$STRANDED" \
@@ -266,7 +267,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 		then
 			echo "Running htseq-count for ERCC GTF..."
 
-			htseq-count \
+		singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$HTSEQ_SIF" htseq-count \
 			--format=bam \
 			--order="$SORT_ORDER" \
 			--stranded="$STRANDED" \
