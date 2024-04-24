@@ -2,12 +2,16 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=9_SE_ALIGNMENT_METRICS.sh
-SCRIPT_VERSION=0.1
+SCRIPT_VERSION=0.2
 # DATE: 05-30-2018
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
-# This script is designed to be run once for each sample and is executed by <TTseq>_pipline.sh
+# This script is designed to be run once for each sample and is executed by <XXseq>_pipline.sh
 # REF_FILE in .fasta format must be accompanied by .dict and .fai files created by CreateSequenceDictionary and samtools faidx, respectively; All 3 can be gzipped.
+#
+# Version 0.2 240424:
+# updating to use PICARD Singularity/Apptainer on Proton2
+# removing REF_FILE argument
 
 
 # variables from command line via <TTseq>_pipline.sh:
@@ -16,10 +20,13 @@ QC_DIR=${2}
 SAMPLE_DIR=${3}
 SAMPLE_NAME=${4}
 PICARD_MEM=${5}
-REF_FILE=${6} 					# required for some Picard tools
+PICARD_SIF=${6}
+SAMTOOLS_SIF=${7}
 # other variables:
-SAMTOOLS_VERSION="$(samtools --version 2>&1)"
-CASM_VERSION="$(java -Xmx64G -jar $PICARD/picard CollectAlignmentSummaryMetrics --version 2>&1)"
+# SAMTOOLS_VERSION="$(samtools --version 2>&1)"
+SAMTOOLS_VERSION=`singularity run "$SAMTOOLS_SIF" samtools --version | head -n1`
+# CASM_VERSION="$(java -Xmx64G -jar $PICARD/picard CollectAlignmentSummaryMetrics --version 2>&1)"
+CASM_VERSION=`singularity run "$PICARD_SIF" java -jar /picard.jar CollectAlignmentSummaryMetrics --version 2>&1`
 
 
 blue="\033[0;36m"
@@ -36,7 +43,8 @@ Arguments for "$SCRIPT_TITLE":
 (3) SAMPLE_DIR: "$SAMPLE_DIR"
 (4) SAMPLE_NAME: "$SAMPLE_NAME"
 (5) PICARD_MEM: "$PICARD_MEM"
-(6) REF_FILE: "$REF_FILE"
+(6) PICARD_SIF: "$PICARD_SIF"
+(7) SAMTOOLS_SIF: "$SAMTOOLS_SIF"
 Samtools version: "$SAMTOOLS_VERSION"
 samtools view options:
 various filters
@@ -46,11 +54,11 @@ REFERENCE_SEQUENCE="$REF_FILE"
 ASSUME_SORTED=true
 "
 
-EXPECTED_ARGS=6
+EXPECTED_ARGS=7
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE>
+    echo "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <PICARD_SIF> <SAMTOOLS_SIF>
     ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
     "$@"
     "
@@ -124,24 +132,23 @@ echo "Collecting alignment stats for "$SAMPLE_NAME"...
 echo "
 Unfiltered BAM: "$(basename "$BAMFILE1")"" >> $OUTPUT_FILE
 echo -ne "\
-Total_reads: "$(samtools view "$BAMFILE1" | wc -l)"
-R1: "$(samtools view -f 64 "$BAMFILE1" | wc -l)"
-Unaligned: "$(samtools view -f 5 "$BAMFILE1" | wc -l)"
-Aligned: "$(samtools view -f 1 -F 260 "$BAMFILE1" | wc -l)"
-Duplicates: "$(samtools view -f 1025 -F 260 "$BAMFILE1" | wc -l)"
+Total_reads: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view "$BAMFILE1" | wc -l)"
+R1: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 64 "$BAMFILE1" | wc -l)"
+Unaligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 5 "$BAMFILE1" | wc -l)"
+Aligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE1" | wc -l)"
+Duplicates: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1025 -F 260 "$BAMFILE1" | wc -l)"
 " >> $OUTPUT_FILE
 # ADD MORE BOWTIE2 TAGS?
 
 echo "
 Filtered dups marked BAM: "$(basename "$BAMFILE2")"" >> $OUTPUT_FILE
 echo -ne "\
-Total_reads: "$(samtools view "$BAMFILE2" | wc -l)"
-R1: "$(samtools view -f 64 "$BAMFILE2" | wc -l)"
-Unaligned: "$(samtools view -f 5 "$BAMFILE2" | wc -l)"
-Aligned: "$(samtools view -f 1 -F 260 "$BAMFILE2" | wc -l)"
-Duplicates: "$(samtools view -f 1025 -F 260 "$BAMFILE2" | wc -l)"
+Total_reads: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view "$BAMFILE2" | wc -l)"
+R1: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 64 "$BAMFILE2" | wc -l)"
+Unaligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 5 "$BAMFILE2" | wc -l)"
+Aligned: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1 -F 260 "$BAMFILE2" | wc -l)"
+Duplicates: "$(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools view -f 1025 -F 260 "$BAMFILE2" | wc -l)"
 " >> $OUTPUT_FILE
-# ADD MORE BOWTIE2 TAGS?
 
 # check output status
 if [ $? -ne 0 ]
