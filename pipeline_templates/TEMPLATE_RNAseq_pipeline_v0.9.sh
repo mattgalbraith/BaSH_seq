@@ -137,7 +137,7 @@ SUBMIT_LOG=$6
 
 # 5 ADD RGID
        # common options
-        PLATFORM=ILLUMINA_NovaSeq6000
+        PLATFORM=EXAMPLE_BaSH_seq
         DATE="$(date "+%m-%d-%Y")"
         PI=EXAMPLE_BaSH_seq
         LIBRARY="$SEQ_TYPE"_"$STRAND_TYPE"
@@ -159,7 +159,7 @@ SUBMIT_LOG=$6
         DUPLICATES=mark           # <mark> or <remove>
                                                                         # need to check variables in script and move here
 # 9 ALIGNMENT METRICS
-        PICARD_MEM_9=64
+        PICARD_MEM_9=64G
         # REF_FILE="$HOME"/references/Picard/ucsc.hg19.fasta.gz # not currently used
 
 # 10 RSEQC
@@ -419,6 +419,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=4G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/0_PRE_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$FASTQR1_FILE" "$QC_DIR_NAME" FASTQC_pre_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                 "
@@ -455,6 +460,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                             --output="$STAGE_OUTPUT".%j.%N.out \
                             --error="$STAGE_ERROR".%j.%N.err \
                             --partition=defq \
+                            --time=10:00:00 \
+                            --nodes=1 \
+                            --ntasks=1 \
+                            --cpus-per-task=8 \
+                            --mem-per-cpu=4G \
                             --wrap="\
                                     sh "$PIPELINE_SCRIPTS_DIR"/0_PRE_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$FASTQR2_FILE" "$QC_DIR_NAME" FASTQC_pre_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                     "
@@ -522,6 +532,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=10G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/1_FASTQ_MCF_BB.sh \
                                 "$SEQ_TYPE" \
@@ -601,6 +616,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=4G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                 "
@@ -638,6 +658,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                             --output="$STAGE_OUTPUT".%j.%N.out \
                             --error="$STAGE_ERROR".%j.%N.err \
                             --partition=defq \
+                            --time=10:00:00 \
+                            --nodes=1 \
+                            --ntasks=1 \
+                            --cpus-per-task=8 \
+                            --mem-per-cpu=4G \
                             --wrap="\
                                     sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                     "
@@ -699,6 +724,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=4G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/3_FASTQ_SCREEN.sh \
                                 "$SEQ_TYPE" \
@@ -857,6 +887,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=10 \
+                        --mem-per-cpu=32G \
                         --wrap="\
                                 sh $PIPELINE_SCRIPTS_DIR/4_"$ALIGNER".sh \
                                 "$SEQ_TYPE" \
@@ -869,7 +904,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                                 "$ALIGNER_SS" \
                                 "$THIS_SAMPLE_NAME".mapped.no-rgid.bam \
                                 Alignments \
-                                16 \
+                                10 \
                                 "$HISAT2_SIF" \
                                 "$SAMTOOLS_SIF" \
                                 "$THIS_ANALYSIS_DIR" \
@@ -933,6 +968,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=1 \
+                        --mem-per-cpu=8G \
                         --wrap="\
                                 sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh \
                                 "$THIS_SAMPLE_NAME" \
@@ -998,6 +1038,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=1 \
+                        --mem-per-cpu=8G \
                         --wrap="\
                                 sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh \
                                 "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam \
@@ -1061,6 +1106,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=4G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/7_SORT_BAM.sh \
                                 "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam \
@@ -1124,6 +1174,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=16G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/8_MARK_DUPLICATES.sh \
                                 "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam \
@@ -1203,6 +1258,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=4 \
+                        --mem-per-cpu=16G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/"$ALIGNMENT_METRICS_SCRIPT" \
                                 "$THIS_ANALYSIS_DIR" \
@@ -1270,6 +1330,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=16G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh \
                                 "$SEQ_TYPE" \
@@ -1340,6 +1405,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --output="$STAGE_OUTPUT".%j.%N.out \
                         --error="$STAGE_ERROR".%j.%N.err \
                         --partition=defq \
+                        --time=10:00:00 \
+                        --nodes=1 \
+                        --ntasks=1 \
+                        --cpus-per-task=8 \
+                        --mem-per-cpu=8G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/11_HTSEQ_COUNT.sh \
                                 "$THIS_ANALYSIS_DIR" \
