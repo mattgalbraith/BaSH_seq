@@ -54,7 +54,7 @@ REFERENCE_SEQUENCE="$REF_FILE"
 ASSUME_SORTED=true
 "
 
-EXPECTED_ARGS=8
+EXPECTED_ARGS=7
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
