@@ -2,7 +2,7 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=9_PE_ALIGNMENT_METRICS.sh
-SCRIPT_VERSION=0.4
+SCRIPT_VERSION=0.4.1
 # DATE: 06-21-2018
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
@@ -10,6 +10,7 @@ SCRIPT_VERSION=0.4
 # REF_FILE in .fasta format must be accompanied by .dict and .fai files created by CreateSequenceDictionary and samtools faidx, respectively; All 3 can be gzipped.
 #
 # Version 0.4 110923: updating to use PICARD Singularity/Apptainer on Proton2
+# Version 0.4.1 240424: removing REF_FILE argument
 
 
 # variables from command line via <XXseq>_pipline.sh:
@@ -18,9 +19,9 @@ QC_DIR=${2}
 SAMPLE_DIR=${3}
 SAMPLE_NAME=${4}
 PICARD_MEM=${5}
-REF_FILE=${6} 					# required for some Picard tools
-PICARD_SIF=${7}
-SAMTOOLS_SIF=${8}
+#REF_FILE=${6} 					# required for some Picard tools; No longer in use
+PICARD_SIF=${6}
+SAMTOOLS_SIF=${7}
 # other variables:
 # SAMTOOLS_VERSION="$(samtools --version 2>&1)"
 SAMTOOLS_VERSION=`singularity run "$SAMTOOLS_SIF" samtools --version | head -n1`
@@ -42,9 +43,8 @@ Arguments for "$SCRIPT_TITLE":
 (3) SAMPLE_DIR: "$SAMPLE_DIR"
 (4) SAMPLE_NAME: "$SAMPLE_NAME"
 (5) PICARD_MEM: "$PICARD_MEM"
-(6) REF_FILE: "$REF_FILE"
-(7) PICARD_SIF: "$PICARD_SIF"
-(8) SAMTOOLS_SIF: "$SAMTOOLS_SIF"
+(6) PICARD_SIF: "$PICARD_SIF"
+(7) SAMTOOLS_SIF: "$SAMTOOLS_SIF"
 Samtools version: "$SAMTOOLS_VERSION"
 samtools view options:
 various filters
@@ -58,7 +58,7 @@ EXPECTED_ARGS=8
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo -e "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE> <PICARD_SIF> <SAMTOOLS_SIF>
+    echo -e "Usage: "$SCRIPT_TITLE" <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <PICARD_SIF> <SAMTOOLS_SIF>
     ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
     "$@"
     "
