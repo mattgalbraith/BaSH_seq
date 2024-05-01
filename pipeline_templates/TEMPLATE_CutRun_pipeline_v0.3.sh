@@ -376,7 +376,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 fi
 
                 #sh $PIPELINE_SCRIPTS_DIR/0_PRE_FASTQC.sh
-                #Usage: 0_PRE_FASTQC.sh <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE/FASTQR2_FILE> <QC_DIR_NAME> <OUT_DIR_NAME> <THREADS>  
+                #Usage: 0_PRE_FASTQC.sh <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE/FASTQR2_FILE> <QC_DIR_NAME> <OUT_DIR_NAME> <THREADS> <FASTQC_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR> 
 
                 # Read 1
                 JOB_NAME=stage-"$STAGE_NAME"_R1-"$PIPELINE_TYPE"-"$THIS_SAMPLE_NAME"
@@ -395,7 +395,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=4G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/0_PRE_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$FASTQR1_FILE" "$QC_DIR_NAME" FASTQC_pre_filtered 8\
+                                sh "$PIPELINE_SCRIPTS_DIR"/0_PRE_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$FASTQR1_FILE" "$QC_DIR_NAME" FASTQC_pre_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                 "
 
                 # Catch output status
@@ -436,7 +436,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                             --cpus-per-task=8 \
                             --mem-per-cpu=4G \
                             --wrap="\
-                                    sh "$PIPELINE_SCRIPTS_DIR"/0_PRE_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$FASTQR2_FILE" "$QC_DIR_NAME" FASTQC_pre_filtered 8\
+                                    sh "$PIPELINE_SCRIPTS_DIR"/0_PRE_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$FASTQR2_FILE" "$QC_DIR_NAME" FASTQC_pre_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                     "
 
                     # Catch output status
@@ -494,7 +494,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 fi
 
                 #sh $PIPELINE_SCRIPTS_DIR/1_FASTQ_MCF.sh
-                #Usage: 1_FASTQ_MCF.sh <SEQ_TYPE> <READ_LENGTH> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <MIN_QUAL> <MIN_SEQ_LENGTH> <MIN_ADAPTER> <MIN_PERC_OCCUR> <MAX_PERC_DIFF> <CONTAMINANTS_FASTA>                                      
+                #Usage: 1_FASTQ_MCF.sh <SEQ_TYPE> <READ_LENGTH> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <MIN_QUAL> <MIN_SEQ_LENGTH> <MIN_ADAPTER> <MIN_PERC_OCCUR> <MAX_PERC_DIFF> <CONTAMINANTS_FASTA> <BBTOOLS_SIF> <EAUTILS_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR>                            
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -521,7 +521,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                                 "$MIN_ADAPTER" \
                                 "$MIN_PERC_OCCUR" \
                                 "$MAX_PERC_DIFF" \
-                                "$CONTAMINANTS_FASTA"\
+                                "$CONTAMINANTS_FASTA" \
+                                "$BBTOOLS_SIF" \
+                                "$EAUTILS_SIF" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$RAW_DIR"
                                 "
 
                 # Catch output status
@@ -568,7 +572,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/2_POST_FASTQC.sh
-                #Usage: 2_POST_FASTQC.sh <SAMPLE_DIR> <SAMPLE_NAME> <FASTQ_FILE_NAME> <QC_DIR_NAME> <OUT_DIR_NAME> <THREADS>
+                #Usage: 2_POST_FASTQC.sh <SAMPLE_DIR> <SAMPLE_NAME> <FASTQ_FILE_NAME> <QC_DIR_NAME> <OUT_DIR_NAME> <THREADS> <FASTQC_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR>
 
                 # Read 1
                 JOB_NAME=stage-"$STAGE_NAME"_R1-"$PIPELINE_TYPE"-"$THIS_SAMPLE_NAME"
@@ -588,7 +592,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=4G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8
+                                sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                 "
 
                 # Catch output status
@@ -630,7 +634,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                             --cpus-per-task=8 \
                             --mem-per-cpu=4G \
                             --wrap="\
-                                    sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8\
+                                    sh "$PIPELINE_SCRIPTS_DIR"/2_POST_FASTQC.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" FASTQC_post_filtered 8 "$FASTQC_SIF" "$THIS_ANALYSIS_DIR" "$RAW_DIR"\
                                     "
 
                     # Catch output status
@@ -682,7 +686,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/3_FASTQ_SCREEN.sh
-                #Usage: 3_FASTQ_SCREEN.sh <SEQ_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <THREADS>
+                #Usage: 3_FASTQ_SCREEN.sh <SEQ_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <QC_DIR_NAME> <THREADS> <FASTQSCREEN_CONF> <FASTQSCREEN_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR> <REFS_DIR>
                                
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -696,7 +700,19 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=4G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/3_FASTQ_SCREEN.sh "$SEQ_TYPE" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" "$QC_DIR_NAME" 8\
+                                sh "$PIPELINE_SCRIPTS_DIR"/3_FASTQ_SCREEN.sh \
+                                "$SEQ_TYPE" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$THIS_SAMPLE_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR1_FILE")" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Processed/trimmed_"$(basename "$FASTQR2_FILE")" \
+                                "$QC_DIR_NAME" \
+                                16 \
+                                "$FASTQSCREEN_CONF" \
+                                "$FASTQSCREEN_SIF" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$RAW_DIR" \
+                                "$REFS_DIR"\
                                 "
 
                 # Catch output status
@@ -824,7 +840,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh
-                #Usage: 5_ADD_RGID.sh <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>
+                #Usage: 5_ADD_RGID.sh <SAMPLE_NAME> <PLATFORM> <DATE> <PI (investigator code)> <LIBRARY (PE/SE)> <SEQ_CORE> <SEQ_ID> <EXPERIMENT> <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <PICARD_SIF> <THIS_ANALYSIS_DIR>
                               
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -838,7 +854,13 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=1 \
                         --mem-per-cpu=8G \
                         --wrap="\
-                                sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh "$THIS_SAMPLE_NAME" "$PLATFORM" "$DATE" "$PI" "$LIBRARY" "$SEQ_CORE" "$SEQ_ID" "$EXPERIMENT" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.no-rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.bam "$PICARD_MEM_5"\
+                                sh $PIPELINE_SCRIPTS_DIR/5_ADD_RGID.sh \
+                                "$THIS_SAMPLE_NAME" \
+                                "$PLATFORM" "$DATE" "$PI" "$LIBRARY" "$SEQ_CORE" "$SEQ_ID" "$EXPERIMENT" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.no-rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.bam \
+                                "$PICARD_MEM_5" \
+                                "$PICARD_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status
@@ -888,7 +910,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh
-                #Usage: 6_MAPQ_FILTER.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <MIN_MAPQ>
+                #Usage: 6_MAPQ_FILTER.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <MIN_MAPQ> <SAMTOOLS_SIF> <THIS_ANALYSIS_DIR>
                                 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -902,7 +924,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=1 \
                         --mem-per-cpu=8G \
                         --wrap="\
-                                sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$MIN_MAPQ"\
+                                sh $PIPELINE_SCRIPTS_DIR/6_MAPQ_FILTER.sh \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam \
+                                "$MIN_MAPQ" \
+                                "$SAMTOOLS_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status
@@ -952,7 +978,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/7_SORT_BAM.sh
-                #Usage: 7_SORT_BAM.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM>
+                #Usage: 7_SORT_BAM.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <PICARD_SIF> <THIS_ANALYSIS_DIR>
                 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -966,7 +992,11 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=4G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/7_SORT_BAM.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$PICARD_MEM_7"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/7_SORT_BAM.sh \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam \
+                                "$PICARD_MEM_7" \
+                                "$PICARD_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status
@@ -1016,7 +1046,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 #sh $PIPELINE_SCRIPTS_DIR/8_MARK_DUPLICATES.sh 
-                #Usage: 8_MARK_DUPLICATES.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <mark/remove duplicates>
+                #Usage: 8_MARK_DUPLICATES.sh <SAMPLE_DIR> <ALIGNMENT_DIRNAME> <BAM_IN_FILENAME> <BAM_OUT_FILENAME> <PICARD_MEM> <mark/remove duplicates> <PICARD_SIF> <THIS_ANALYSIS_DIR>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1030,7 +1060,12 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=16G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/8_MARK_DUPLICATES.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam "$PICARD_MEM_8" "$DUPLICATES"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/8_MARK_DUPLICATES.sh \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ Alignments "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam \
+                                "$PICARD_MEM_8" \
+                                "$DUPLICATES" \
+                                "$PICARD_SIF" \
+                                "$THIS_ANALYSIS_DIR"\
                                 "
 
                 # Catch output status
@@ -1095,7 +1130,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 fi
 
                 # sh "$PIPELINE_SCRIPTS_DIR"/9_PE_ALIGNMENT_METRICS.sh
-                # Usage: 9_PE_ALIGNMENT_METRICS.sh <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE>
+                # Usage: 9_PE_ALIGNMENT_METRICS.sh <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <PICARD_MEM> <REF_FILE> <PICARD_SIF> <SAMTOOLS_SIF>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1109,7 +1144,15 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=4 \
                         --mem-per-cpu=16G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/"$ALIGNMENT_METRICS_SCRIPT" "$THIS_ANALYSIS_DIR" "$QC_DIR_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$PICARD_MEM_9" "$REF_FILE"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/"$ALIGNMENT_METRICS_SCRIPT" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$QC_DIR_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$THIS_SAMPLE_NAME" \
+                                "$PICARD_MEM_9" \
+                                "$REF_FILE" \
+                                "$PICARD_SIF" \
+                                "$SAMTOOLS_SIF"\
                                 "
 
                 # Catch output status
@@ -1159,7 +1202,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
                 
                 # sh 10_RSEQC.sh
-                # Usage: 10_RSEQC.sh <SEQ_TYPE> <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <REFSEQ_BED> <HOUSEKEEPING_BED>
+                # Usage: 10_RSEQC.sh <SEQ_TYPE> <ANALYSIS_DIR> <QC_DIR> <SAMPLE_DIR> <SAMPLE_NAME> <REFSEQ_BED> <HOUSEKEEPING_BED> <RSEQC_SIF> <RSEQC_REFS>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1173,7 +1216,18 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=16G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh "$SEQ_TYPE" "$THIS_ANALYSIS_DIR" "$QC_DIR_NAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$THIS_SAMPLE_NAME" "$REFSEQ_BED" "$HOUSEKEEPING_BED"\
+                                sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh \
+                                "$SEQ_TYPE" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$QC_DIR_NAME" \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                Alignments \
+                                "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam \
+                                "$THIS_SAMPLE_NAME" \
+                                "$REFSEQ_BED" \
+                                "$HOUSEKEEPING_BED" \
+                                "$RSEQC_SIF" \
+                                "$RSEQC_REFS"\
                                 "
 
                 # Catch output status
