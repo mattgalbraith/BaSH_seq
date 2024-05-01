@@ -21,12 +21,17 @@ BWA_INDEX=${6}
 BAM_OUT_FILENAME=${7}
 OUT_DIR_NAME=${8}
 THREADS=${9}
+BWA_SIF=${10}
+SAMTOOLS_SIF=${11}
+THIS_ANALYSIS_DIR=${12}
+RAW_DIR=${13}
+REFS_DIR=${14}
 
 
 # other variables
 ALIGNMENT_SUMMARY_FILENAME="bwa-mem_alignment_summary.txt"
-BWA_VERSION="$(singularity run ~/Tools/Singularity/bwa-0.7.17-docker_amd64.sif bwa 2>&1 | grep Version)"
-SAMTOOLS_VERSION="$(samtools --version 2>&1)"
+BWA_VERSION="$(singularity run "$BWA_SIF" bwa 2>&1 | grep Version)"
+SAMTOOLS_VERSION=`singularity run "$SAMTOOLS_SIF" samtools --version | head -n1`
 
 blue="\033[0;36m"
 green="\033[0;32m"
@@ -38,17 +43,21 @@ Script name: "$SCRIPT_TITLE"
 Script version: "$SCRIPT_VERSION"
 Arguments for 4_BWA-MEM.sh:
 (1) SEQ_TYPE: "$SEQ_TYPE"
-(2) STRAND_TYPE: "$STRAND_TYPE"
-(3) SAMPLE_DIR: "$SAMPLE_DIR"
-(4) SAMPLE_NAME: "$SAMPLE_NAME"
-(5) FASTQR1_FILE: "$FASTQR1_FILE"
-(6) FASTQR2_FILE: "$FASTQR2_FILE"
-(7) BWA_INDEX: "$BWA_INDEX"
-(8) BAM_OUT_FILENAME: "$BAM_OUT_FILENAME"
-(9) OUT_DIR_NAME: "$OUT_DIR_NAME"
-(10) THREADS: "$THREADS"
+(2) SAMPLE_DIR: "$SAMPLE_DIR"
+(3) SAMPLE_NAME: "$SAMPLE_NAME"
+(4) FASTQR1_FILE: "$FASTQR1_FILE"
+(5) FASTQR2_FILE: "$FASTQR2_FILE"
+(6) BWA_INDEX: "$BWA_INDEX"
+(7) BAM_OUT_FILENAME: "$BAM_OUT_FILENAME"
+(8) OUT_DIR_NAME: "$OUT_DIR_NAME"
+(9) THREADS: "$THREADS"
+(12) BWA_SIF: "$BWA_SIF"
+(13) SAMTOOLS_SIF: "$SAMTOOLS_SIF"
+(14) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
+(15) RAW_DIR: "$RAW_DIR"
+(16) REFS_DIR: "$REFS_DIR"
 bwa version: "$BWA_VERSION"
-bwa options:
+bwa options: mem
 #
 samtools version: "$SAMTOOLS_VERSION"
 samtools sort options for BAM output:
@@ -63,11 +72,11 @@ samtools view options for counting number of aligned reads:
 
 # See: https://bio-bwa.sourceforge.net/bwa.shtml
 
-EXPECTED_ARGS=9
+EXPECTED_ARGS=14
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo -e "Usage: "$SCRIPT_TITLE" <SEQ_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <ALIGNER_INDEX> <BAM_OUT_FILENAME> <OUT_DIR_NAME> <THREADS>
+        echo -e "Usage: "$SCRIPT_TITLE" <SEQ_TYPE> <SAMPLE_DIR> <SAMPLE_NAME> <FASTQR1_FILE> <FASTQR2_FILE> <ALIGNER_INDEX> <BAM_OUT_FILENAME> <OUT_DIR_NAME> <THREADS> <BWA_SIF> <SAMTOOLS_SIF> <THIS_ANALYSIS_DIR> <RAW_DIR> <REFS_DIR>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -108,6 +117,15 @@ fi
 		mkdir $SAMPLE_DIR/$OUT_DIR_NAME
 	fi
 
+	# Make temp directory for samtools
+	SAMTOOLS_TMPDIR="$TMPDIR"/samtools/"$SAMPLE_NAME" # v0.3: updated for Proton2
+	#
+	if [ -d "$SAMTOOLS_TMPDIR" ]
+	then
+		rm -R "$SAMTOOLS_TMPDIR" 	# Better to overwrite in case error exit leaves previous version
+	fi
+	mkdir --parents "$SAMTOOLS_TMPDIR"
+
 
 
 echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:" $SLURMD_NODENAME"]" && echo -e "${NC}"
@@ -121,11 +139,12 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 			# set -o pipefail sets exit status of pipe/subshell to exit code of last command to exit non-zero (otherwise non-zero from bowtie2 will not be caught)
 			# outer brackets with pipefail ensures that we do not just capture the exit code from tee
 			(set -o pipefail
-				(singularity run ~/Tools/Singularity/bwa-0.7.17-docker_amd64.sif bwa mem \
+				(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$BWA_SIF" bwa mem \
 				-t $THREADS \
 				$BWA_INDEX \
 				$FASTQR1_FILE | \
-				samtools sort -@ 12 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
+				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
+				-@ 4 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
 				# The "-" at end of samtools view options tells it to use stdin as source file (piped directly from bowtie2)
 				# OLD CMD: samtools view -bhS -o $SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME -
 				# samtools sort can convert directly to bam and removes the need for stage 7_SORT_BAM which uses slow Picard tool
@@ -145,12 +164,13 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 			# set -o pipefail sets exit status to exit code of pipe/subshell to last command to exit non-zero (otherwise non-zero from hisat2 will not be caught)
 			# outer brackets with pipefail ensures that we do not just capture the exit code from tee
 			(set -o pipefail
-				(singularity run ~/Tools/Singularity/bwa-0.7.17-docker_amd64.sif bwa mem \
+				(singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$REFS_DIR":"$REFS_DIR" "$BWA_SIF" bwa mem \
 				-t $THREADS \
 				$BWA_INDEX \
 				$FASTQR1_FILE \
 				$FASTQR2_FILE | \
-				samtools sort -@ 12 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
+				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
+				-@ 4 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
 			
 			# check output status
 			if [ $? -ne 0 ]
@@ -164,10 +184,10 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 			"
 	fi
 
-samtools flagstat "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".flagstat.txt
-# count only primary alignments, this is the real mapped reads, flagstat is wrong?
-samtools view -F 256 -F 4 "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" | wc -l > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".num_aligned.txt
-# these do not collect extra info / metrics for PE data - see PE_ALIGNMENT_METRICS.sh stage
+# samtools flagstat "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".flagstat.txt
+# # count only primary alignments, this is the real mapped reads, flagstat is wrong?
+# samtools view -F 256 -F 4 "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME" | wc -l > "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$BAM_OUT_FILENAME".num_aligned.txt
+# # these do not collect extra info / metrics for PE data - see PE_ALIGNMENT_METRICS.sh stage
 
 echo -e "
 ${green}"$SCRIPT_TITLE" ENDED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:" $SLURMD_NODENAME"]" && echo -e "${NC}
