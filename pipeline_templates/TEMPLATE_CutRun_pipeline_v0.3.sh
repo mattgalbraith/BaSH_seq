@@ -48,7 +48,7 @@ SUBMIT_LOG=$6
         READ_LENGTH=150                     # <50/75/150>  # used to trim n+1 read if present
         PIPELINE_TYPE=CutRun
         SPIKE_IN=none                       # <none/both/dm/ercc> external RNA spike-in details; used to select correct index(s) and gtf(s) for alignment and counting - check that correct paths are ebtered for stages 4 and 11 below
-        PIPELINE_SCRIPTS_DIR=$HOME/BaSH_seq/CutRun/stageScripts  # MAY NEED TO CUSTOMIZE
+        PIPELINE_SCRIPTS_DIR=/data1/matt_testing/BaSH_seq/CutRun/stageScripts  # MAY NEED TO CUSTOMIZE
         QC_DIR_NAME="$THIS_ANALYSIS_DIR"/QC
         ALIGNMENT_DIRNAME="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Alignments   # NEED TO IMPLEMENT IN STAGE 4
         COUNTS_DIRNAME="$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Counts
@@ -91,9 +91,10 @@ SUBMIT_LOG=$6
 # 4 MAPPING
         # common options
         ALIGNER="BWA-MEM"      # <BWA-MEM> or <>
-        ALIGNER_INDEX="$REFS_DIR"/references/GRCh38_bwa/gencode.v33.basic # HUMAN ONLY
+        ALIGNER_INDEX="$REFS_DIR"/GRCh38_bwa/gencode.v33.basic # HUMAN ONLY
         # uncommon options are either defaults or set in 4_<ALIGNER>.sh
         BWA_SIF=/data1/containers/bwa0.7.17.sif
+        SAMTOOLS_SIF=/data1/containers/samtools1.16.1.sif
 
 # 5 ADD RGID
        # common options
@@ -1279,7 +1280,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 # sh "$PIPELINE_SCRIPTS_DIR"/11_HOMER_BAM_makeTagDirectory.sh
-                # Usage: 11_HOMER_BAM_makeTagDirectory.sh <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER>
+                # Usage: 11_HOMER_BAM_makeTagDirectory.sh <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER> <HOMER_SIF> <HOMER_DATA>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1293,7 +1294,19 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=16G \
                         --wrap="\
-                                  sh "$PIPELINE_SCRIPTS_DIR"/11_HOMER_MAKE_TAG_DIR.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$HOMER_DIRNAME" "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Alignments/"$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam "$THIS_SAMPLE_NAME" "$STRAND_TYPE" "$SEQ_TYPE" "$REF" "$FRAG_LENGTH_s11" "$TAGS_PER_s11""
+                                  sh "$PIPELINE_SCRIPTS_DIR"/11_HOMER_MAKE_TAG_DIR.sh \
+                                  "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                  "$HOMER_DIRNAME" \
+                                  "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/Alignments/"$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam \
+                                  "$THIS_SAMPLE_NAME" \
+                                  "$STRAND_TYPE" \
+                                  "$SEQ_TYPE" \
+                                  "$REF" \
+                                  "$FRAG_LENGTH_s11" \
+                                  "$TAGS_PER_s11" \
+                                  "$HOMER_SIF" \
+                                  "$HOMER_DATA"\
+                                  "
 
                 # Catch output status
                 OUTPUT_STATUS=$?
