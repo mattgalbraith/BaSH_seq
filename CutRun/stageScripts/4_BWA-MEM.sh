@@ -144,10 +144,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 				$BWA_INDEX \
 				$FASTQR1_FILE | \
 				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
-				-@ 4 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
-				# The "-" at end of samtools view options tells it to use stdin as source file (piped directly from bowtie2)
-				# OLD CMD: samtools view -bhS -o $SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME -
-				# samtools sort can convert directly to bam and removes the need for stage 7_SORT_BAM which uses slow Picard tool
+				-@ 4 -m 32G -T "$SAMTOOLS_TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
 			
 			# check output status
 			if [ $? -ne 0 ]
@@ -158,7 +155,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 
 	elif [ "$SEQ_TYPE" = "PE" ]
 		then
-			echo "Running hisat2 in paired-end mode for "$SAMPLE_NAME"...
+			echo "Running bwa-mem in paired-end mode for "$SAMPLE_NAME"...
 			"
 			# () are used to group the bowtie2 and samtools commands to run in a subshell, allowing all output to be redirected to single file
 			# set -o pipefail sets exit status to exit code of pipe/subshell to last command to exit non-zero (otherwise non-zero from hisat2 will not be caught)
@@ -170,7 +167,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 				$FASTQR1_FILE \
 				$FASTQR2_FILE | \
 				singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" "$SAMTOOLS_SIF" samtools sort \
-				-@ 4 -m 32G -T "$TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
+				-@ 4 -m 32G -T "$SAMTOOLS_TMPDIR" -o "$SAMPLE_DIR/$OUT_DIR_NAME/$BAM_OUT_FILENAME" -) 2>&1 | tee "$SAMPLE_DIR"/"$OUT_DIR_NAME"/"$ALIGNMENT_SUMMARY_FILENAME")
 			
 			# check output status
 			if [ $? -ne 0 ]
