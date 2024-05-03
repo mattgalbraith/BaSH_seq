@@ -61,8 +61,9 @@ SEQ_TYPE=${6}
 REF=${7}
 FRAG_LENGTH=${8}
 TAGS_PER_POSITION=${9}
-HOMER_SIF=${10}
-HOMER_DATA=${11}
+THIS_ANALYSIS_DIR=${10}
+HOMER_SIF=${11}
+HOMER_DATA=${12}
 # other variables:
 # HOMERPLOTS=$SHARED/espipe/Aux/scripts/RNAseq/HOMER/homerPlots.R 	# This is not currently accessible
 SAMTOOLS_VERSION="$(singularity run "$HOMER_SIF" samtools --version  | head -n1)"
@@ -90,8 +91,9 @@ Arguments for "$SCRIPT_TITLE":
 (7) REF: "$REF"
 (8) FRAG_LENGTH: "$FRAG_LENGTH"
 (9) TAGS_PER_POSITION: "$TAGS_PER_POSITION"
-(10) HOMER_SIF: "$HOMER_SIF"
-(11) HOMER_DATA: "$HOMER_DATA"
+(10) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
+(11) HOMER_SIF: "$HOMER_SIF"
+(12) HOMER_DATA: "$HOMER_DATA"
 Other variables:
 BED_DIRNAME="$SAMPLE_DIR"/Alignments/BED
 BED_FILE="$BED_DIRNAME"/"$SAMPLE_NAME".bed
@@ -104,11 +106,11 @@ HOMER makeTagDirectory options:
 -checkGC
 "
 
-EXPECTED_ARGS=11
+EXPECTED_ARGS=12
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER> <HOMER_SIF> <HOMER_DATA>
+        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER> <ANALYSIS_DIR> <HOMER_SIF> <HOMER_DATA>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
