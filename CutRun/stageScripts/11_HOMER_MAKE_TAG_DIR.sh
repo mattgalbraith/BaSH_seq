@@ -2,12 +2,13 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=11_HOMER_MAKE_TAG_DIR.sh
-SCRIPT_VERSION=v0.2
+SCRIPT_VERSION=v0.3
 # DATE: 11-23-2022
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
 # This script is designed to be run once for each sample and is executed by <XXseq>_pipeline.sh
 # This version (0.2) uses Homer singularity container.
+# v0.3 050224: updating to run on Proton2
 
 # HOMER can read in from BAM/SAM or BED format
 # If your alignment is in a different format, it is recommended that you convert it into a BED file format since this is a fairly standard format with minimal chance of misinterpretation:
@@ -60,12 +61,14 @@ SEQ_TYPE=${6}
 REF=${7}
 FRAG_LENGTH=${8}
 TAGS_PER_POSITION=${9}
+HOMER_SIF=${10}
+HOMER_DATA=${11}
 # other variables:
 # HOMERPLOTS=$SHARED/espipe/Aux/scripts/RNAseq/HOMER/homerPlots.R 	# This is not currently accessible
-SAMTOOLS_VERSION="$(samtools --version 2>&1)"
+SAMTOOLS_VERSION="$(singularity run "$HOMER_SIF" samtools --version  | head -n1)"
 BED_DIRNAME="$SAMPLE_DIR"/Alignments/BED
 BED_FILE="$BED_DIRNAME"/"$SAMPLE_NAME".bed
-HOMER_VERSION="$(singularity run --bind ~/homer_data:/opt/homerdata ~/Tools/Singularity/homer.sif perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
+HOMER_VERSION="$(singularity run --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
 #HOMERPLOTS=/gpfs/jespinosa/shared/Matt/PipeLinesScripts/misc/homerPlots.R
 
 blue="\033[0;36m"
@@ -78,23 +81,22 @@ echo "
 Script name: "$SCRIPT_TITLE"
 Script version: "$SCRIPT_VERSION"
 Arguments for "$SCRIPT_TITLE":
-SAMPLE_DIR: "$SAMPLE_DIR"
-HOMER_DIRNAME: "$HOMER_DIRNAME"
-BAM_IN_FILENAME: "$BAM_IN_FILENAME"
-SAMPLE_NAME: "$SAMPLE_NAME"
-STRAND_TYPE: "$STRAND_TYPE"
-SEQ_TYPE: "$SEQ_TYPE"
-REF: "$REF"
-FRAG_LENGTH: "$FRAG_LENGTH"
-TAGS_PER_POSITION: "$TAGS_PER_POSITION"
+(1) SAMPLE_DIR: "$SAMPLE_DIR"
+(2) HOMER_DIRNAME: "$HOMER_DIRNAME"
+(3) BAM_IN_FILENAME: "$BAM_IN_FILENAME"
+(4) SAMPLE_NAME: "$SAMPLE_NAME"
+(5) STRAND_TYPE: "$STRAND_TYPE"
+(6) SEQ_TYPE: "$SEQ_TYPE"
+(7) REF: "$REF"
+(8) FRAG_LENGTH: "$FRAG_LENGTH"
+(9) TAGS_PER_POSITION: "$TAGS_PER_POSITION"
+(10) HOMER_SIF: "$HOMER_SIF"
+(11) HOMER_DATA: "$HOMER_DATA"
 Other variables:
 BED_DIRNAME="$SAMPLE_DIR"/Alignments/BED
 BED_FILE="$BED_DIRNAME"/"$SAMPLE_NAME".bed
-HOMERPLOTS: "$HOMERPLOTS"
-NOT USED Samtools version: "$SAMTOOLS_VERSION"
-NOT USED samtools view options:
-NOT USED -F16 	# read fwd strand (exclude rev strand)
-NOT USED -f16 	# read rev strand
+NOT USED HOMERPLOTS: "$HOMERPLOTS"
+Samtools version: "$SAMTOOLS_VERSION"
 HOMER version: "$HOMER_VERSION"
 HOMER makeTagDirectory options:
 -format sam
@@ -102,11 +104,11 @@ HOMER makeTagDirectory options:
 -checkGC
 "
 
-EXPECTED_ARGS=9
+EXPECTED_ARGS=11
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER>
+        echo "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER> <HOMER_SIF> <HOMER_DATA>
         ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -230,7 +232,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 
 	# Make HOMER tag directory:
 	echo "Making HOMER Tag Directory for "$SAMPLE_NAME"..."
-	srun singularity run --bind ~/homer_data:/opt/homerdata ~/Tools/Singularity/homer.sif makeTagDirectory "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION" \
+	srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeTagDirectory "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION" \
 			$(echo -e "\
 			-format sam
 			"$FRAG_LENGTH_OPTS" "$LENGTH" \
