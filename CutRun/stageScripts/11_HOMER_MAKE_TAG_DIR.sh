@@ -234,7 +234,7 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 
 	# Make HOMER tag directory:
 	echo "Making HOMER Tag Directory for "$SAMPLE_NAME"..."
-	singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeTagDirectory "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION" \
+	singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homerdata "$HOMER_SIF" makeTagDirectory "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION" \
 			$(echo -e "\
 			-format sam
 			"$FRAG_LENGTH_OPTS" "$LENGTH" \
