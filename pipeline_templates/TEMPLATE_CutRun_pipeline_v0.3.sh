@@ -1356,7 +1356,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 # sh "$PIPELINE_SCRIPTS_DIR"/12_HOMER_MAKE_UCSC_FILE.sh
-                # Usage: 12_HOMER_MAKE_UCSC_FILE.sh <SAMPLE_DIR> <HOMER_TAG_DIRNAME> <SAMPLE_NAME> <TRACKS_DIRNAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <REF> <FRAG_LENGTH> <TAGS_PER> <NORM> <RES>
+                # Usage: 12_HOMER_MAKE_UCSC_FILE.sh <SAMPLE_DIR> <HOMER_TAG_DIRNAME> <SAMPLE_NAME> <TRACKS_DIRNAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <REF> <FRAG_LENGTH> <TAGS_PER> <NORM> <RES>  <ANALYSIS_DIR> <HOMER_SIF> <HOMER_DATA>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1370,7 +1370,21 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --cpus-per-task=8 \
                         --mem-per-cpu=16G \
                         --wrap="\
-                                sh "$PIPELINE_SCRIPTS_DIR"/12_HOMER_MAKE_UCSC_FILE.sh "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ "$HOMER_TAG_DIRNAME" "$THIS_SAMPLE_NAME" "$TRACKS_DIRNAME" "$STRAND_TYPE" "$REF" "$FRAG_LENGTH_s12" "$TAGS_PER_s12" "$NORM_s12" "$RES_s12""
+                                sh "$PIPELINE_SCRIPTS_DIR"/12_HOMER_MAKE_UCSC_FILE.sh \
+                                "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
+                                "$HOMER_TAG_DIRNAME" \
+                                "$THIS_SAMPLE_NAME" \
+                                "$TRACKS_DIRNAME" \
+                                "$STRAND_TYPE" \
+                                "$REF" \
+                                "$FRAG_LENGTH_s12" \
+                                "$TAGS_PER_s12" \
+                                "$NORM_s12" \
+                                "$RES_s12" \
+                                "$THIS_ANALYSIS_DIR" \
+                                "$HOMER_SIF" \
+                                "$HOMER_DATA"\
+                                "
 
                 # Catch output status
                 OUTPUT_STATUS=$?
