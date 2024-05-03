@@ -774,7 +774,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --nodes=1 \
                         --ntasks=1 \
                         --cpus-per-task=10 \
-                        --mem-per-cpu=32G \
+                        --mem-per-cpu=10G \
                         --wrap="\
                                 sh $PIPELINE_SCRIPTS_DIR/4_"$ALIGNER".sh \
                                 "$SEQ_TYPE" \
@@ -1214,8 +1214,8 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --time=10:00:00 \
                         --nodes=1 \
                         --ntasks=1 \
-                        --cpus-per-task=8 \
-                        --mem-per-cpu=16G \
+                        --cpus-per-task=10 \
+                        --mem-per-cpu=10G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh \
                                 "$SEQ_TYPE" \
