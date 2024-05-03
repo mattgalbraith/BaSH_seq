@@ -65,7 +65,7 @@ HOMER_SIF=${10}
 HOMER_DATA=${11}
 # other variables:
 # HOMERPLOTS=$SHARED/espipe/Aux/scripts/RNAseq/HOMER/homerPlots.R 	# This is not currently accessible
-# SAMTOOLS_VERSION="$(singularity run "$HOMER_SIF" samtools --version  | head -n1)"
+SAMTOOLS_VERSION="$(singularity run "$HOMER_SIF" samtools --version  | head -n1)"
 BED_DIRNAME="$SAMPLE_DIR"/Alignments/BED
 BED_FILE="$BED_DIRNAME"/"$SAMPLE_NAME".bed
 HOMER_VERSION="$(singularity run --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
