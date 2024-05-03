@@ -27,8 +27,9 @@ FRAG_LENGTH=${7}
 TAGS_PER_POSITION=${8}		# used for -tbp
 NORM=${9}					# used for -norm
 RES=${10}					# used for -res option; default: 1; resolution in bp
-HOMER_SIF=${11}
-HOMER_DATA=${12}
+THIS_ANALYSIS_DIR=${11}
+HOMER_SIF=${12}
+HOMER_DATA=${13}
 # other variables:
 HOMER_VERSION="$(singularity run "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "HOMER" | grep "v" | cut -f3,3)"
 FILESIZE=1e10 				# used for -fsize option; default: 1e10; no reduction
@@ -54,8 +55,9 @@ Arguments for "$SCRIPT_TITLE":
 (8) TAGS PER POSITION: "$TAGS_PER_POSITION"
 (9) RESOLUTION: "$RES"
 (10) NORMALIZATION TO: "$NORM"
-(11) HOMER_SIF: "$HOMER_SIF"
-(12) HOMER_DATA: "$HOMER_DATA"
+(11) THIS_ANALYSIS_DIR: "$THIS_ANALYSIS_DIR"
+(12) HOMER_SIF: "$HOMER_SIF"
+(13) HOMER_DATA: "$HOMER_DATA"
 HOMER version: "$HOMER_VERSION"
 HOMER makeTagDirectory options:
 Other options:
@@ -63,11 +65,11 @@ TAG DIRECTORY: "$TAG_DIRNAME"
 FILE SIZE: "$FILESIZE"
 "
 
-EXPECTED_ARGS=12
+EXPECTED_ARGS=13
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo -e "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_TAG_DIRNAME> <SAMPLE_NAME> <TRACKS_DIRNAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <REF> <FRAG_LENGTH> <TAGS_PER> <NORM> <RES> <HOMER_SIF> <HOMER_DATA>
+    echo -e "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_TAG_DIRNAME> <SAMPLE_NAME> <TRACKS_DIRNAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <REF> <FRAG_LENGTH> <TAGS_PER> <NORM> <RES> <ANALYSIS_DIR> <HOMER_SIF> <HOMER_DATA>
 	    ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
