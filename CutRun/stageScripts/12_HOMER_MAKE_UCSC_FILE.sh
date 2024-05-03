@@ -30,7 +30,7 @@ RES=${10}					# used for -res option; default: 1; resolution in bp
 HOMER_SIF=${11}
 HOMER_DATA=${12}
 # other variables:
-HOMER_VERSION="$(singularity run --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
+HOMER_VERSION="$(singularity run "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "HOMER" | grep "v" | cut -f3,3)"
 FILESIZE=1e10 				# used for -fsize option; default: 1e10; no reduction
 
 
@@ -147,7 +147,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 	then
 		echo "Making normalized unstranded bedGraph..."
 
-		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeUCSCfile $(echo -e "\
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homerdata "$HOMER_SIF" makeUCSCfile $(echo -e "\
 					 "$TAG_DIRNAME" \
 					 "$FRAG_LENGTH_OPTS" "$LENGTH" \
 					 -norm "$NORM" \
