@@ -68,7 +68,7 @@ HOMER_DATA=${11}
 SAMTOOLS_VERSION="$(singularity run "$HOMER_SIF" samtools --version  | head -n1)"
 BED_DIRNAME="$SAMPLE_DIR"/Alignments/BED
 BED_FILE="$BED_DIRNAME"/"$SAMPLE_NAME".bed
-HOMER_VERSION="$(singularity run --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
+HOMER_VERSION="$(singularity run "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "HOMER" | grep "v" | cut -f3,3)"
 #HOMERPLOTS=/gpfs/jespinosa/shared/Matt/PipeLinesScripts/misc/homerPlots.R
 
 blue="\033[0;36m"
@@ -232,8 +232,8 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 
 	# Make HOMER tag directory:
 	echo "Making HOMER Tag Directory for "$SAMPLE_NAME"..."
-	srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeTagDirectory "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION" \
-			$(echo -e "\
+	srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeTagDirectory \
+	                "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION" \
 			-format sam
 			"$FRAG_LENGTH_OPTS" "$LENGTH" \
 			"$FLIP" \
@@ -241,7 +241,6 @@ echo -e "${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" N
 			-genome "$REF" \
 			-checkGC \
 			"$TBP" "$TAGS"\
-			") \
 			"$BAM_IN_FILENAME" 2> "$HOMER_DIRNAME"/"$SAMPLE_NAME"_TagDirectory_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION"/makeTagDirectory.out
 	
 	# check output status
