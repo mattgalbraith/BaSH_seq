@@ -2,7 +2,7 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=12_HOMER_MAKE_UCSC_FILE.sh
-SCRIPT_VERSION=0.3
+SCRIPT_VERSION=0.4
 # DATE: 11-23-2022
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
@@ -10,24 +10,27 @@ SCRIPT_VERSION=0.3
 # This script should be run together with previous stage.
 # This version (0.3) uses Homer singularity container.
 # Cut & Run version - use UNSTRANDED 
+# v0.4 050224: updating to run on Proton2
 
 
-# variables from command line via <TTseq>_pipline.sh:
+# variables from command line via <XXseq>_pipline.sh:
 SAMPLE_DIR=${1}
 TAG_DIRNAME=${2}
 SAMPLE_NAME=${3}
 TRACKS_DIRNAME=${4}
 #################################################################
 # STRAND_TYPE=${5}
-STRAND_TYPE="unstranded" # SET TO UNSTRANDED HERE FOR CUT & RUN
+STRAND_TYPE="unstranded" # SET TO UNSTRANDED HERE FOR CUT & RUN, REPLISEQ
 #################################################################
 REF=${6} 					# required for making bigWigs
 FRAG_LENGTH=${7}
 TAGS_PER_POSITION=${8}		# used for -tbp
 NORM=${9}					# used for -norm
 RES=${10}					# used for -res option; default: 1; resolution in bp
+HOMER_SIF=${11}
+HOMER_DATA=${12}
 # other variables:
-HOMER_VERSION="$(singularity run --bind ~/homer_data:/opt/homerdata ~/Tools/Singularity/homer.sif perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
+HOMER_VERSION="$(singularity run --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" perl /opt/homer/configureHomer.pl -list 2>&1 | grep "homer" | grep "v" | cut -f3,3)"
 FILESIZE=1e10 				# used for -fsize option; default: 1e10; no reduction
 
 
@@ -45,22 +48,26 @@ Arguments for "$SCRIPT_TITLE":
 (2) HOMER TAG DIRNAME: "$TAG_DIRNAME"
 (3) SAMPLE NAME: "$SAMPLE_NAME"
 (4) TRACKS DIRECTORY: "$TRACKS_DIRNAME"
-(5) STRAND TYPE: "$STRAND_TYPE"
+(HARD CODED) STRAND_TYPE: "$STRAND_TYPE"
 (6) REF: "$REF"
 (7) FRAG LENGTH: "$FRAG_LENGTH"
 (8) TAGS PER POSITION: "$TAGS_PER_POSITION"
 (9) RESOLUTION: "$RES"
 (10) NORMALIZATION TO: "$NORM"
+(11) HOMER_SIF: "$HOMER_SIF"
+(12) HOMER_DATA: "$HOMER_DATA"
+HOMER version: "$HOMER_VERSION"
+HOMER makeTagDirectory options:
 Other options:
 TAG DIRECTORY: "$TAG_DIRNAME"
 FILE SIZE: "$FILESIZE"
 "
 
-EXPECTED_ARGS=10
+EXPECTED_ARGS=12
 # check if correct number of arguments are supplied from command line
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo -e "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_TAG_DIRNAME> <SAMPLE_NAME> <TRACKS_DIRNAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <REF> <FRAG_LENGTH> <TAGS_PER> <NORM> <RES>
+    echo -e "Usage: "$SCRIPT_TITLE" <SAMPLE_DIR> <HOMER_TAG_DIRNAME> <SAMPLE_NAME> <TRACKS_DIRNAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <REF> <FRAG_LENGTH> <TAGS_PER> <NORM> <RES> <HOMER_SIF> <HOMER_DATA>
 	    ${red}ERROR - expecting "$EXPECTED_ARGS" ARGS but "$#" were provided:${NC}
         "$@"
         "
@@ -140,7 +147,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 	then
 		echo "Making normalized unstranded bedGraph..."
 
-		srun singularity run --bind ~/homer_data:/opt/homerdata ~/Tools/Singularity/homer.sif makeUCSCfile $(echo -e "\
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeUCSCfile $(echo -e "\
 					 "$TAG_DIRNAME" \
 					 "$FRAG_LENGTH_OPTS" "$LENGTH" \
 					 -norm "$NORM" \
@@ -186,7 +193,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 	then
 		echo "Making normalized positive-strand bedGraph..."
 
-		srun singularity run --bind ~/homer_data:/opt/homerdata ~/Tools/Singularity/homer.sif makeUCSCfile $(echo -e "\
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeUCSCfile $(echo -e "\
 					 "$TAG_DIRNAME" \
 					 "$FRAG_LENGTH_OPTS" "$LENGTH" \
 					 -norm "$NORM" \
@@ -230,7 +237,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 
 		echo "Making normalized negative-strand bedGraph..."
 
-		srun singularity run --bind ~/homer_data:/opt/homerdata ~/Tools/Singularity/homer.sif makeUCSCfile $(echo -e "\
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$HOMER_DATA":/opt/homer "$HOMER_SIF" makeUCSCfile $(echo -e "\
 					 "$TAG_DIRNAME" \
 					 "$FRAG_LENGTH_OPTS" "$LENGTH" \
 					 -norm "$NORM" \
