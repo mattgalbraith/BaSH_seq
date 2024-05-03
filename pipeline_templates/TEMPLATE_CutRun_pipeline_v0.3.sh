@@ -1214,7 +1214,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                         --time=10:00:00 \
                         --nodes=1 \
                         --ntasks=1 \
-                        --cpus-per-task=10 \
+                        --cpus-per-task=4 \
                         --mem-per-cpu=10G \
                         --wrap="\
                                 sh "$PIPELINE_SCRIPTS_DIR"/10_RSEQC.sh \
