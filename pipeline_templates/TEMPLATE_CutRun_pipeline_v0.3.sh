@@ -1280,7 +1280,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                 "
 
                 # sh "$PIPELINE_SCRIPTS_DIR"/11_HOMER_BAM_makeTagDirectory.sh
-                # Usage: 11_HOMER_BAM_makeTagDirectory.sh <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER> <HOMER_SIF> <HOMER_DATA>
+                # Usage: 11_HOMER_BAM_makeTagDirectory.sh <SAMPLE_DIR> <HOMER_DIRNAME> <BAM_IN_FILENAME> <SAMPLE_NAME> <STRAND_TYPE (strand-specific-fwd/strand-specific-rev/unstranded)> <SEQ_TYPE (PE/SE)> <REF> <FRAG_LENGTH> <TAGS_PER> <ANALYSIS_DIR> <HOMER_SIF> <HOMER_DATA>
 
                 sbatch -W \
                         --account="$THIS_USER_ACCOUNT" \
@@ -1304,6 +1304,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                                   "$REF" \
                                   "$FRAG_LENGTH_s11" \
                                   "$TAGS_PER_s11" \
+                                  "$THIS_ANALYSIS_DIR" \
                                   "$HOMER_SIF" \
                                   "$HOMER_DATA"\
                                   "
