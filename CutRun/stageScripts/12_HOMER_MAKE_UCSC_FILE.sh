@@ -95,7 +95,7 @@ fi
 	fi
 
 	# Check for tracks directory 						# Changed location to analysis_dir/Tracks/HOMER_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION"
-	OUTPUT_DIR="$TRACKS_DIRNAME"/HOMER_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION"
+	OUTPUT_DIR="$TRACKS_DIRNAME"/HOMER_frag-"$FRAG_LENGTH"_tbp-"$TAGS_PER_POSITION"_res-"$RES"
 	if [ -d "$OUTPUT_DIR" ]
 		then
 			echo -e "Tracks directory found: "$OUTPUT_DIR""
@@ -174,7 +174,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 					 "$TBP" "$TAGS" \
 					 -strand both \
 					 ")\
-					 > "$OUTPUT_DIR"/"$SAMPLE_NAME".unstranded.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION".bedGraph
+					 > "$OUTPUT_DIR"/"$SAMPLE_NAME".unstranded.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION"_res-"$RES".bedGraph
 
 		if [ $? -ne 0 ]
 		then
@@ -221,7 +221,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 					 "$TBP" "$TAGS" \
 			 		 -strand + \
 					 ")\
-					 > "$OUTPUT_DIR"/"$SAMPLE_NAME".pos-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION".bedGraph
+					 > "$OUTPUT_DIR"/"$SAMPLE_NAME".pos-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION"_res-"$RES".bedGraph
 
 		if [ $? -ne 0 ]
 		then
@@ -266,7 +266,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 					 "$TBP" "$TAGS" \
 					 -strand - \
 					 ")\
-					 > "$OUTPUT_DIR"/"$SAMPLE_NAME".neg-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION".bedGraph
+					 > "$OUTPUT_DIR"/"$SAMPLE_NAME".neg-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION"_res-"$RES".bedGraph
 
 		if [ $? -ne 0 ]
 		then
@@ -278,7 +278,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 		fi
 
 		echo "Compressing bedGraph with gzip..."
-		gzip "$OUTPUT_DIR"/"$SAMPLE_NAME".neg-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION".bedGraph
+		gzip "$OUTPUT_DIR"/"$SAMPLE_NAME".neg-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION"_res-"$RES".bedGraph
 
 		if [ $? -ne 0 ]
 		then
