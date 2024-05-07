@@ -2,7 +2,7 @@
 # consider adding: set -e (kills script when any command returns failure code) and set -u (fails if trying to use and unset variable)
 
 SCRIPT_TITLE=12_HOMER_MAKE_UCSC_FILE.sh
-SCRIPT_VERSION=0.4
+SCRIPT_VERSION=0.5
 # DATE: 11-23-2022
 # AUTHOR: Matthew Galbraith
 # SUMMARY: 
@@ -11,6 +11,7 @@ SCRIPT_VERSION=0.4
 # This version (0.3) uses Homer singularity container.
 # Cut & Run version - use UNSTRANDED 
 # v0.4 050224: updating to run on Proton2
+# v0.5 050724: adding switch for -avg argument to makeUCSCfile
 
 
 # variables from command line via <XXseq>_pipline.sh:
@@ -76,7 +77,7 @@ then
     exit 1
 fi
 
-# IF statments to check/create directories
+# IF statements to check/create directories
 	# Check for Sample directory
 	if [ ! -d $SAMPLE_DIR ]
 	then
@@ -138,6 +139,18 @@ fi
 		TAGS=
 	fi
 
+	# Set or ignore -avg option
+	if [ "$RES" == 1 ]
+	then
+		echo "not setting -avg"
+		AVG=
+
+	elif [ "$RES" != 1 ]
+	then
+		echo "setting -avg"
+		AVG="-avg"
+	fi
+
 
 cd "$SAMPLE_DIR"
 
@@ -157,6 +170,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 					 -color 0,0,255 \
 					 -name "$SAMPLE_NAME".unstranded.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION" \
 					 -res "$RES" \
+					 "$AVG" \
 					 "$TBP" "$TAGS" \
 					 -strand both \
 					 ")\
@@ -203,6 +217,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 					 -color 0,0,255 \
 					 -name "$SAMPLE_NAME".pos-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION" \
 					 -res "$RES" \
+					 "$AVG" \
 					 "$TBP" "$TAGS" \
 			 		 -strand + \
 					 ")\
@@ -247,6 +262,7 @@ if [ "$STRAND_TYPE" = "unstranded" ]
 					 -color 255,0,0 \
 					 -name "$SAMPLE_NAME".neg-strand.norm"$NORM".frag-"$FRAG_LENGTH".tbp-"$TAGS_PER_POSITION" \
 					 -res "$RES" \
+					 "$AVG" \
 					 "$TBP" "$TAGS" \
 					 -strand - \
 					 ")\
