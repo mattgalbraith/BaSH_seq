@@ -1342,7 +1342,7 @@ Read 2 fastq file: "$FASTQR2_FILE"
                                 "$QC_DIR_NAME" \
                                 "$THIS_ANALYSIS_DIR"/Sample_"$THIS_SAMPLE_NAME"/ \
                                 Alignments \
-                                "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.bam \
+                                "$THIS_SAMPLE_NAME".mapped.rgid.filtered.sorted.dups_mark.bam \
                                 "$THIS_SAMPLE_NAME" \
                                 "$REFSEQ_BED" \
                                 "$HOUSEKEEPING_BED" \
