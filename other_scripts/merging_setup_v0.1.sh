@@ -29,7 +29,7 @@ SCRIPT_VERSION="$SCRIPT_VERSION"
 cat fastq_merging.txt | while IFS=$'\t' read F1 F2 F3 F4 F5
 do 
 	SUBMIT_LOG="$(pwd)/"$F1"_"$F2".log"
-	echo "(nohup sh /data1/matt_testing/BaSH_seq/other_scripts/FASTQ_MERGE_2.sh "$F1" "$F2" "$F3" "$F4" "$F5" &> "$SUBMIT_LOG") &"
+	echo "(nohup sh /data1/matt_testing/BaSH_seq/other_scripts/FASTQ_MERGE_2_v0.1.sh "$F1" "$F2" "$F3" "$F4" "$F5" &> "$SUBMIT_LOG") &"
 done >> $(pwd)/submit_fastq_merging.sh
 
 # need to execute commands above as subshells: (CMD) &
