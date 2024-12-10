@@ -186,7 +186,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 					echo -e "Read length specified as: "$READ_LENGTH"\nRead length of "$[${READ_LENGTH}+1]" found - trimming off n+1 base using bbduk in single-end mode..."
 
 					# Trim off n+1 base
-					srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" "$BBTOOLS_SIF" bbduk.sh \
+					srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$FASTQ_TMPDIR":"$FASTQ_TMPDIR" "$BBTOOLS_SIF" bbduk.sh \
 					in="$FASTQR1_FILE" \
 					out="$FASTQ_TMPDIR"/"$(basename "$FASTQR1_FILE")" \
 					int=f \
@@ -231,7 +231,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 						then
 							echo -e "Read length specified as: "$READ_LENGTH"\nRead lengths of "$[${READ_LENGTH}+1]" found - trimming off n+1 base using bbduk in paired-end mode..."
 							# Trim off n+1 base
-							srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" "$BBTOOLS_SIF" bbduk.sh \
+							srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$FASTQ_TMPDIR":"$FASTQ_TMPDIR" "$BBTOOLS_SIF" bbduk.sh \
 							in1="$FASTQR1_FILE" \
 							in2="$FASTQR2_FILE" \
 							out1="$FASTQ_TMPDIR"/"$(basename "$FASTQR1_FILE")" \
@@ -274,7 +274,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 	then
 		echo "Running fastq-mcf in single-end mode for "$SAMPLE_NAME"..."
 
-		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$CONTAMINANTS_FASTA":"$CONTAMINANTS_FASTA" "$EAUTILS_SIF" fastq-mcf \
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$FASTQ_TMPDIR":"$FASTQ_TMPDIR" --bind "$CONTAMINANTS_FASTA":"$CONTAMINANTS_FASTA" "$EAUTILS_SIF" fastq-mcf \
 			-S -q "$MIN_QUAL" -l "$MIN_SEQ_LENGTH" "$CONTAMINANTS_FASTA" "$FASTQR1_FILE" \
 			-o "$TRIMMED_READS_DIR"/trimmed_"$FASTQR1_FILE_basename" 1> "$QC_DIR_NAME"/fastq-mcf/"$SAMPLE_NAME"/"$TRIMMING_SUMMARY_FILENAME"
 		
@@ -292,7 +292,7 @@ ${blue}"$SCRIPT_TITLE" STARTED AT: " `date` "[JOB_ID:" $SLURM_JOB_ID" NODE_NAME:
 		echo "Running fastq-mcf in paired-end mode for "$SAMPLE_NAME"..."
 
 		FASTQR2_FILE_basename=`basename $FASTQR2_FILE`
-		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$CONTAMINANTS_FASTA":"$CONTAMINANTS_FASTA" "$EAUTILS_SIF" fastq-mcf \
+		srun singularity run --bind "$THIS_ANALYSIS_DIR":"$THIS_ANALYSIS_DIR" --bind "$RAW_DIR":"$RAW_DIR" --bind "$FASTQ_TMPDIR":"$FASTQ_TMPDIR" --bind "$CONTAMINANTS_FASTA":"$CONTAMINANTS_FASTA" "$EAUTILS_SIF" fastq-mcf \
 			-S -q "$MIN_QUAL" -l "$MIN_SEQ_LENGTH" -s "$MIN_ADAPTER" -t "$MIN_PERC_OCCUR" -p "$MAX_PERC_DIFF"  "$CONTAMINANTS_FASTA" "$FASTQR1_FILE" "$FASTQR2_FILE" \
 			-o "$TRIMMED_READS_DIR"/trimmed_"$FASTQR1_FILE_basename" -o "$TRIMMED_READS_DIR"/trimmed_"$FASTQR2_FILE_basename" 1> "$QC_DIR_NAME"/fastq-mcf/"$SAMPLE_NAME"/"$TRIMMING_SUMMARY_FILENAME"
 		
