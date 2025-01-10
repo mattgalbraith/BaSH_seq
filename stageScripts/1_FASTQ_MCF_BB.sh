@@ -11,6 +11,7 @@ SCRIPT_VERSION=0.6
 #
 # v0.5 modified call to bbduk.sh so that it relies on PATH rather than pointing to /Matt/Tools/...
 # v0.6 103023: updating to use BBTOOLS and EAUTILS Singularity/Apptainers
+# v0.7 011024: changing location of FASTQ_TMPDIR due to permissions issues
 
 
 # variables from command line via <XXseq>_pipeline.sh:
@@ -140,12 +141,15 @@ fi
 
 	# Make temp directory for n+1 trimmed files
 	# FASTQ_TMPDIR="$TMPDIR"/fastq_temp/"$SAMPLE_NAME"
-	FASTQ_TMPDIR=/tmp/fastq_temp/"$SAMPLE_NAME" # v0.6: updated for Proton2
+	# FASTQ_TMPDIR=/tmp/fastq_temp/"$SAMPLE_NAME" # v0.6: updated for Proton2
+	FASTQ_TMPDIR="$SAMPLE_DIR"/fastq_temp/"$SAMPLE_NAME" # v0.7 change
 	#
 	if [ -d "$FASTQ_TMPDIR" ]
 	then
+		echo "Removing existing directory: "$FASTQ_TMPDIR"" # v0.7 change
 		rm -R "$FASTQ_TMPDIR" 	# Better to overwrite in case error exit leaves previous version (bbduk default prevents overwrite)
 	fi
+	echo "Making new directory: "$FASTQ_TMPDIR"" # v0.7 change
 	mkdir --parents "$FASTQ_TMPDIR"
 
 	DISCARDED_READS_DIR="$SAMPLE_DIR"/Processed/"$DISCARDED_READS_DIRNAME"
