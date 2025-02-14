@@ -90,7 +90,7 @@ SUBMIT_LOG=$6
 # 3 FASTQ SCREEN
         # common options:
         # uncommon options are either defaults or set in 3_FASTQ_SCREEN.sh
-        FASTQSCREEN_CONF=/data1/matt_testing/BaSH_seq_test/BaSH_seq/misc/fastq_screen.conf
+        FASTQSCREEN_CONF=/data1/matt_testing/BaSH_seq/misc/fastq_screen.conf
         FASTQSCREEN_SIF=/data1/containers/fastqscreen0.15.2.sif
 
 # # 4 MAPPING TOPHAT2_ALIGN
